@@ -1,0 +1,3316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Railway Traffic Control Simulation — Research Evaluation Framework</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+:root{
+  --bg:#080c14;--surf:#0e1420;--surf2:#141c2e;--surf3:#1a2338;
+  --border:#1e2d45;--border2:#243350;
+  --accent:#5b8af0;--accent2:#7c4dff;--accent-dim:rgba(91,138,240,0.12);
+  --green:#2dd4a0;--red:#f05b5b;--amber:#f0a83d;--orange:#f07b3d;
+  --cyan:#38bdf8;--teal:#2dd4bf;
+  --text:#c8d6ef;--text2:#e8eef8;--muted:#3d5270;--muted2:#6b87ab;
+  --exp:#5b8af0;--pas:#2dd4a0;--frt:#f07b3d;--reg:#a78bfa;
+  --glass:rgba(14,20,32,0.88);
+  --shadow:0 4px 24px rgba(0,0,0,0.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Inter',system-ui,-apple-system,sans-serif;font-size:13px;min-height:100vh;
+  background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(91,138,240,0.06),transparent);
+}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted2)}
+
+/* ── HEADER ── */
+header{
+  position:sticky;top:0;z-index:100;
+  background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:58px;
+}
+.h-brand{display:flex;align-items:center;gap:12px}
+.h-logo{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
+  box-shadow:0 2px 10px rgba(91,138,240,0.3);
+}
+.h-text{display:flex;flex-direction:column;gap:1px}
+.h-brand .title{font-size:15px;font-weight:700;letter-spacing:-0.3px;color:var(--text2)}
+.h-brand .sub{font-size:11px;color:var(--muted2);letter-spacing:0.1px}
+.h-tabs{display:flex;gap:2px;background:var(--surf2);padding:3px;border-radius:9px;border:1px solid var(--border)}
+.tab-btn{
+  padding:5px 16px;border:none;border-radius:6px;
+  background:transparent;color:var(--muted2);
+  cursor:pointer;font-size:12.5px;font-weight:600;font-family:inherit;
+  transition:all 0.18s;
+}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(91,138,240,0.35)}
+.h-seed{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted2)}
+.h-seed input{
+  width:56px;padding:4px 7px;background:var(--surf2);
+  border:1px solid var(--border2);color:var(--text);border-radius:5px;
+  font-size:11px;font-family:inherit;text-align:center;
+}
+.h-seed input:focus{border-color:var(--accent);outline:none}
+
+/* ── TAB PANELS ── */
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ── SIMULATION TAB ── */
+.sim-layout{display:flex;min-height:calc(100vh - 58px)}
+.config-sidebar{
+  width:240px;flex-shrink:0;
+  background:var(--surf);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;max-height:calc(100vh - 58px);
+}
+.sim-main{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px}
+
+/* Config sidebar */
+.cfg-section{
+  padding:12px 16px 4px;font-size:10px;font-weight:700;letter-spacing:1px;
+  color:var(--muted);text-transform:uppercase;
+}
+.cfg-group{padding:4px 14px}
+.cfg-group label{display:block;font-size:11px;color:var(--muted2);margin-bottom:4px;font-weight:600}
+select{
+  width:100%;padding:7px 9px;background:var(--surf2);
+  border:1px solid var(--border2);color:var(--text);
+  border-radius:6px;font-size:11.5px;font-family:inherit;cursor:pointer;
+  transition:border-color 0.15s;
+}
+select:focus,select:hover{border-color:var(--accent);outline:none}
+input[type=range]{
+  width:100%;height:4px;border-radius:2px;
+  background:var(--surf3);border:none;cursor:pointer;
+  accent-color:var(--accent);
+}
+.btn{
+  width:100%;padding:8px 12px;border-radius:7px;border:1px solid transparent;
+  font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;text-align:center;
+  transition:all 0.18s;letter-spacing:0.2px;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),#4a74e0);
+  color:#fff;border-color:var(--accent);
+  box-shadow:0 2px 10px rgba(91,138,240,0.3);
+}
+.btn-primary:hover{background:linear-gradient(135deg,#4a74e0,#3a64d0);box-shadow:0 4px 14px rgba(91,138,240,0.4)}
+.btn-secondary{background:var(--surf2);color:var(--text);border-color:var(--border2)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-compare{background:rgba(45,212,160,0.1);color:var(--green);border-color:rgba(45,212,160,0.4)}
+.btn-compare:hover{background:rgba(45,212,160,0.18)}
+.btn-both{background:rgba(124,77,255,0.1);color:#a78bfa;border-color:rgba(124,77,255,0.4)}
+.btn-both:hover{background:rgba(124,77,255,0.18)}
+.btn-danger{background:rgba(240,91,91,0.1);color:var(--red);border-color:rgba(240,91,91,0.4)}
+.btn-danger:hover{background:rgba(240,91,91,0.18)}
+.btn-row{display:flex;gap:6px;padding:4px 14px}
+.btn-row .btn{flex:1}
+.speed-btns{display:flex;gap:3px;padding:4px 14px}
+.speed-btn{
+  flex:1;padding:4px;background:var(--surf2);border:1px solid var(--border);
+  color:var(--muted2);border-radius:5px;cursor:pointer;font-size:11px;font-weight:700;
+  font-family:inherit;transition:all 0.15s;
+}
+.speed-btn.act{background:var(--accent);border-color:var(--accent);color:#fff}
+.sim-progress{
+  margin:4px 14px;padding:8px 10px;
+  background:var(--accent-dim);border-radius:6px;
+  border-left:2px solid var(--accent);font-size:11px;
+}
+.sim-progress .pt{font-weight:700;color:var(--accent)}
+.prog-bar{margin-top:5px;height:3px;background:var(--surf3);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan));border-radius:2px;transition:width 0.2s}
+
+/* Drawer / Accordions */
+.drawer{margin:6px 14px;background:var(--surf2);border:1px solid var(--border);border-radius:7px;overflow:hidden}
+.drawer-hdr{
+  padding:8px 10px;font-size:11px;font-weight:700;color:var(--text);cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;background:var(--surf3);
+}
+.drawer-hdr:hover{color:var(--accent)}
+.drawer-bdy{padding:10px;font-size:11px;color:var(--muted2);display:none;line-height:1.5}
+.drawer.open .drawer-bdy{display:block}
+
+/* Method Note Banner */
+.method-banner{
+  background:linear-gradient(90deg, rgba(91,138,240,0.08), rgba(124,77,255,0.08));
+  border:1px solid rgba(91,138,240,0.25);border-radius:8px;padding:10px 14px;
+  font-size:11px;color:var(--text);display:flex;align-items:center;gap:10px;
+}
+
+/* ── CONTROL BAR ── */
+.control-bar{
+  background:var(--surf);border:1px solid var(--border);border-radius:10px;
+  padding:12px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+}
+.cb-label{font-size:10px;color:var(--muted2);font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
+.cb-val{font-size:13px;font-weight:600;color:var(--text2);margin-top:2px}
+.cb-sep{width:1px;height:28px;background:var(--border2)}
+.cb-time{font-size:18px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;letter-spacing:-0.5px}
+.status-tag{
+  padding:3px 9px;border-radius:99px;font-size:10.5px;font-weight:700;
+  display:inline-flex;align-items:center;gap:5px;
+}
+.st-idle{background:rgba(100,116,139,0.15);color:var(--muted2)}
+.st-running{background:rgba(91,138,240,0.15);color:var(--accent)}
+.st-horizon{background:rgba(240,168,61,0.15);color:var(--amber)}
+.st-completed{background:rgba(45,212,160,0.15);color:var(--green)}
+
+/* Horizon State Card */
+.horizon-card{
+  background:var(--surf);border:1px solid var(--accent);border-radius:10px;
+  padding:14px 18px;display:none;position:relative;overflow:hidden;
+}
+.horizon-card.show{display:block}
+.hc-title{font-size:12px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px}
+.hc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+.hc-item{background:var(--surf2);padding:10px;border-radius:7px;border:1px solid var(--border)}
+.hc-val{font-size:16px;font-weight:800;color:var(--text2)}
+.hc-lbl{font-size:9.5px;color:var(--muted2);margin-top:2px;font-weight:600;text-transform:uppercase}
+
+/* ── NETWORK PANEL ── */
+.network-panel{
+  background:var(--surf);border:1px solid var(--border);border-radius:10px;
+  position:relative;overflow:hidden;
+}
+.network-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 16px;border-bottom:1px solid var(--border);
+  background:linear-gradient(90deg,rgba(91,138,240,0.04),transparent);
+}
+.network-header h3{
+  font-size:11px;font-weight:700;color:var(--muted2);
+  text-transform:uppercase;letter-spacing:1px;
+}
+.net-legend{display:flex;gap:12px;font-size:10px}
+.leg-item{display:flex;align-items:center;gap:4px;color:var(--muted2)}
+.leg-dot{width:7px;height:7px;border-radius:50%}
+canvas#netCanvas{width:100%;height:520px;display:block;cursor:pointer}
+
+/* Interactive Inspector Modal on Canvas */
+.info-modal{
+  position:absolute;bottom:14px;left:16px;
+  background:var(--surf2);border:1px solid var(--accent);border-radius:8px;
+  padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,0.7);max-width:320px;
+  z-index:20;display:none;font-size:11.5px;
+}
+.info-modal.active{display:block}
+.info-modal .modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-weight:700;color:var(--cyan)}
+.info-modal .close-btn{cursor:pointer;color:var(--muted2);font-size:14px}
+.info-modal .close-btn:hover{color:var(--red)}
+
+/* ── CONFLICT POPUP ── */
+.conflict-pop{
+  position:absolute;top:52px;right:16px;
+  background:rgba(240,91,91,0.92);color:#fff;backdrop-filter:blur(8px);
+  padding:8px 12px;border-radius:8px;font-size:11px;font-weight:600;
+  opacity:0;pointer-events:none;transition:opacity 0.2s;max-width:240px;
+  white-space:pre-line;z-index:10;box-shadow:0 4px 16px rgba(240,91,91,0.3);
+}
+.conflict-pop.show{opacity:1}
+
+/* ── 8-KPI ROW (PRIMARY & HORIZON FLEET METRICS) ── */
+.kpi-row-8{display:grid;grid-template-columns:repeat(8,1fr);gap:10px}
+.kpi-card{
+  background:var(--surf);border:1px solid var(--border);border-radius:9px;
+  padding:12px 14px;position:relative;overflow:hidden;
+  transition:border-color 0.2s;
+}
+.kpi-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--accent),transparent);
+}
+.kpi-card:hover{border-color:var(--border2)}
+.kpi-val{font-size:20px;font-weight:800;line-height:1;color:var(--accent);letter-spacing:-0.5px}
+.kpi-lbl{font-size:9.5px;color:var(--muted2);margin-top:6px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase}
+.kpi-sub{font-size:9.5px;color:var(--muted);margin-top:2px}
+
+/* ── LOWER GRID ── */
+.lower-grid{display:grid;grid-template-columns:1fr 420px;gap:14px}
+
+/* ── CHARTS PANEL ── */
+.charts-panel{
+  background:var(--surf);border:1px solid var(--border);border-radius:10px;
+  padding:16px;display:flex;flex-direction:column;gap:16px;
+}
+.chart-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.chart-title{
+  font-size:10.5px;font-weight:700;color:var(--muted2);
+  text-transform:uppercase;letter-spacing:0.8px;
+}
+.chart-toggle-btn{
+  background:var(--surf2);border:1px solid var(--border);border-radius:4px;
+  color:var(--muted2);font-size:9.5px;font-weight:600;padding:2px 6px;cursor:pointer;
+}
+.chart-toggle-btn.act{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chart-container{position:relative}
+canvas.ch{width:100%;display:block}
+
+/* ── PROGRESS-AWARE TRAIN TABLE ── */
+.train-table-wrap{
+  background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden;
+}
+.train-table-wrap h4{
+  font-size:10.5px;font-weight:700;color:var(--muted2);text-transform:uppercase;
+  letter-spacing:0.8px;padding:10px 14px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.ttable{width:100%;border-collapse:collapse;font-size:11px}
+.ttable th{
+  background:var(--surf2);padding:7px 8px;text-align:left;
+  font-weight:700;color:var(--muted);font-size:9.5px;letter-spacing:0.5px;
+  text-transform:uppercase;border-bottom:1px solid var(--border);
+}
+.ttable td{padding:5px 8px;border-bottom:1px solid rgba(30,45,69,0.6);white-space:nowrap}
+.ttable tr:last-child td{border-bottom:none}
+.ttable tr:hover td{background:var(--surf2)}
+.train-table-scroll{max-height:330px;overflow-y:auto}
+.type-badge{display:inline-block;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700}
+.tb-EXP{background:rgba(91,138,240,0.15);color:var(--exp)}
+.tb-PAS{background:rgba(45,212,160,0.15);color:var(--pas)}
+.tb-FRT{background:rgba(240,123,61,0.15);color:var(--frt)}
+.tb-REG{background:rgba(167,139,250,0.15);color:var(--reg)}
+.status-pill{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px}
+.sp-MOVING{background:rgba(45,212,160,0.12);color:var(--green)}
+.sp-WAITING{background:rgba(240,168,61,0.12);color:var(--amber)}
+.sp-SCHEDULED{background:rgba(61,82,112,0.2);color:var(--muted2)}
+.sp-BLOCKED{background:rgba(240,91,91,0.15);color:var(--red)}
+.sp-COMPLETED{background:rgba(91,138,240,0.15);color:var(--accent)}
+.sdot{width:4px;height:4px;border-radius:50%;background:currentColor}
+
+/* ── EVENT LOG ── */
+.event-log-wrap{background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.log-header{
+  display:flex;align-items:center;gap:8px;padding:9px 14px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(90deg,rgba(91,138,240,0.04),transparent);
+}
+.log-header h4{font-size:10.5px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:0.8px}
+.log-filters{display:flex;gap:3px;margin-left:8px}
+.log-filter-btn{
+  padding:2px 8px;border:1px solid var(--border);border-radius:4px;
+  background:var(--surf2);color:var(--muted2);font-size:10px;cursor:pointer;font-weight:600;
+  font-family:inherit;transition:all 0.15s;
+}
+.log-filter-btn.act{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.log-clear{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;font-family:inherit}
+.log-clear:hover{color:var(--red)}
+.log-scroll{height:190px;overflow-y:auto}
+.log-entry{
+  padding:4px 14px;border-bottom:1px solid rgba(30,45,69,0.5);
+  font-size:11px;display:flex;align-items:flex-start;gap:7px;
+}
+.log-time{color:var(--muted);font-variant-numeric:tabular-nums;flex-shrink:0;width:36px;font-size:10px}
+.log-tag{display:inline-block;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700;flex-shrink:0;letter-spacing:0.3px}
+.lt-CONFLICT{background:var(--red);color:#fff}
+.lt-DISPATCH{background:var(--accent);color:#fff}
+.lt-SPAWN{background:var(--muted);color:var(--bg)}
+.lt-MOVE{background:#1a7a5e;color:#fff}
+.lt-DONE{background:var(--teal);color:#0a1a14}
+.lt-FREE{background:var(--surf3);color:var(--muted2)}
+.lt-DISRUPTION{background:#b22222;color:#fff}
+.lt-DECISION{background:#1065a8;color:#fff}
+.log-entry.le-CONFLICT{background:rgba(240,91,91,0.05)}
+.log-entry.le-DISPATCH{background:rgba(91,138,240,0.05)}
+.log-entry.le-DONE{background:rgba(45,212,160,0.05)}
+.log-entry.le-DISRUPTION{background:rgba(178,34,34,0.08)}
+
+/* ── DECISION PANEL ── */
+.decision-panel{
+  background:var(--surf);border:1px solid rgba(56,189,248,0.25);
+  border-radius:10px;padding:16px;display:none;
+}
+.decision-panel.show{display:block}
+.dp-header{font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.dp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dp-box{background:var(--surf2);border-radius:8px;padding:12px;border:1px solid var(--border)}
+.dp-box-title{font-size:9.5px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:7px}
+.dp-winner{color:var(--green);font-size:13px;font-weight:700}
+.dp-reason{display:flex;align-items:flex-start;gap:5px;font-size:11px;color:var(--muted2);margin-top:4px;line-height:1.5}
+.dp-reason .icon{color:var(--green);flex-shrink:0}
+.dp-rejected{color:var(--red);font-size:12px;font-weight:600}
+.dp-rej-reason{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+
+/* ══════════════════════════════════════════════════
+   COMPARISON TAB
+══════════════════════════════════════════════════ */
+.compare-wrap{padding:24px;max-width:1400px;margin:0 auto}
+.compare-empty{text-align:center;padding:80px 20px;color:var(--muted2)}
+.compare-empty .ic{font-size:48px;margin-bottom:16px;opacity:0.6}
+.fair-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.fair-badge{
+  display:flex;align-items:center;gap:5px;padding:4px 12px;
+  background:rgba(45,212,160,0.08);border:1px solid rgba(45,212,160,0.2);
+  border-radius:99px;font-size:10.5px;color:var(--green);font-weight:600;
+}
+.compare-title{font-size:22px;font-weight:800;margin-bottom:6px;color:var(--text2);letter-spacing:-0.5px}
+.compare-sub{font-size:12px;color:var(--muted2);margin-bottom:20px}
+.cmp-table-wrap{
+  background:var(--surf);border:1px solid var(--border);border-radius:10px;
+  overflow:hidden;margin-bottom:20px;
+}
+.cmp-table-wrap h3{
+  padding:12px 18px;border-bottom:1px solid var(--border);
+  font-size:13px;font-weight:700;color:var(--text2);
+  background:linear-gradient(90deg,rgba(91,138,240,0.05),transparent);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.cmp-table{width:100%;border-collapse:collapse;font-size:12px}
+.cmp-table th{
+  background:var(--surf2);padding:9px 14px;text-align:left;
+  font-size:9.5px;font-weight:700;color:var(--muted);letter-spacing:0.6px;text-transform:uppercase;
+}
+.cmp-table td{padding:9px 14px;border-top:1px solid var(--border)}
+.cmp-table tr:first-child td{border-top:none}
+.cmp-bl{color:var(--text)}
+.cmp-pr{color:var(--cyan);font-weight:700}
+.cmp-change{font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px}
+.cmp-pos{background:rgba(45,212,160,0.12);color:var(--green)}
+.cmp-neg{background:rgba(240,91,91,0.12);color:var(--red)}
+.cmp-neu{background:var(--surf2);color:var(--muted2)}
+.charts-grid-6{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.cmp-chart-card{
+  background:var(--surf);border:1px solid var(--border);border-radius:10px;
+  padding:16px;
+}
+.cmp-chart-card h4{
+  font-size:10.5px;font-weight:700;color:var(--muted2);text-transform:uppercase;
+  letter-spacing:0.6px;margin-bottom:12px;
+}
+canvas.cmp-ch{width:100%;display:block}
+
+/* Trade-offs & Difference Panels */
+.tradeoff-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+.tradeoff-item{background:var(--surf2);border-radius:7px;padding:10px;border:1px solid var(--border)}
+
+/* ══════════════════════════════════════════════════
+   ANALYSIS TAB
+══════════════════════════════════════════════════ */
+.analysis-wrap{padding:24px;max-width:1400px;margin:0 auto}
+.analysis-empty{text-align:center;padding:80px 20px;color:var(--muted2)}
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.analysis-card{
+  background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:18px;
+}
+.analysis-card h3{
+  font-size:13px;font-weight:700;margin-bottom:14px;padding-bottom:10px;
+  border-bottom:1px solid var(--border);color:var(--text2);display:flex;justify-content:space-between;align-items:center;
+}
+canvas.heatmap-canvas{width:100%;display:block}
+.heatmap-legend{display:flex;align-items:center;gap:10px;font-size:10.5px;color:var(--muted2);margin-top:10px;flex-wrap:wrap}
+.hl-item{display:flex;align-items:center;gap:4px}
+.hl-box{width:12px;height:12px;border-radius:3px}
+
+.bottleneck-list{display:flex;flex-direction:column;gap:8px}
+.bn-item{
+  background:var(--surf2);border-radius:8px;padding:11px;
+  border:1px solid var(--border);
+}
+.bn-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.bn-name{font-weight:700;font-size:12px;color:var(--text2)}
+.bn-util{font-size:12px;font-weight:800}
+.bn-bar-bg{height:4px;background:var(--surf3);border-radius:2px}
+.bn-bar-fill{height:100%;border-radius:2px}
+.bn-stats{display:flex;gap:12px;margin-top:5px;font-size:10px;color:var(--muted2)}
+.train-stats-table-wrap{overflow-x:auto}
+.full-width{grid-column:1/-1}
+
+/* ══════════════════════════════════════════════════
+   EXPERIMENTS TAB
+══════════════════════════════════════════════════ */
+.exp-wrap{padding:24px;max-width:1400px;margin:0 auto}
+.exp-hero{
+  background:var(--surf);border:1px solid var(--border);border-radius:10px;
+  padding:20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;
+}
+.exp-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.exp-table-wrap{background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px}
+.exp-table-wrap h3{padding:12px 18px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--text2)}
+
+@media(max-width:1300px){
+  .kpi-row-8{grid-template-columns:repeat(4,1fr)}
+  .lower-grid{grid-template-columns:1fr}
+  .charts-grid-6{grid-template-columns:repeat(2,1fr)}
+  .hc-grid{grid-template-columns:repeat(4,1fr)}
+  .tradeoff-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:900px){
+  .sim-layout{flex-direction:column}
+  .config-sidebar{width:100%;flex-direction:row;flex-wrap:wrap;overflow-x:auto;max-height:none}
+  .kpi-row-8{grid-template-columns:repeat(2,1fr)}
+  .analysis-grid{grid-template-columns:1fr}
+  .charts-grid-6{grid-template-columns:1fr}
+  .hc-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════ HEADER ═══════ -->
+<header>
+  <div class="h-brand">
+    <div class="h-logo">🚆</div>
+    <div class="h-text">
+      <div class="title">AI Railway Traffic Control Simulation</div>
+      <div class="sub">Multi-Objective Optimization & Horizon-Based Fleet Evaluation Framework</div>
+    </div>
+  </div>
+  <div class="h-tabs">
+    <button class="tab-btn active" onclick="switchTab('sim')">Simulation</button>
+    <button class="tab-btn" onclick="switchTab('compare')" id="tabCompareBtn">Comparison</button>
+    <button class="tab-btn" onclick="switchTab('analysis')" id="tabAnalysisBtn">Analysis</button>
+    <button class="tab-btn" onclick="switchTab('experiments')" id="tabExpBtn">Experiments</button>
+  </div>
+  <div class="h-seed">
+    <label>Seed</label>
+    <input type="number" id="seedInput" value="42" min="1" max="9999">
+  </div>
+</header>
+
+<!-- ═══════ SIM TAB ═══════ -->
+<div class="tab-panel active" id="panel-sim">
+<div class="sim-layout">
+
+  <!-- Config Sidebar -->
+  <aside class="config-sidebar">
+    <div class="cfg-section">Scenario</div>
+    <div class="cfg-group">
+      <label>Scenario</label>
+      <select id="scenarioSel">
+        <option value="normal">Normal Operations (20 trains)</option>
+        <option value="peak" selected>Peak Bottleneck (45 trains)</option>
+        <option value="delayed">Delay Propagation (35 trains)</option>
+        <option value="junction">Junction Conflict at G (40 trains)</option>
+        <option value="disruption">Section Disruption (40 trains)</option>
+      </select>
+    </div>
+    <div class="cfg-group">
+      <label>Controller</label>
+      <select id="ctrlSel">
+        <option value="proposed" selected>Proposed Multi-Objective Controller</option>
+        <option value="baseline">Traditional Greedy / Priority Controller</option>
+      </select>
+    </div>
+    <div class="cfg-group" style="padding-top:2px">
+      <button class="btn btn-primary" onclick="startSim()" id="runBtn">▶ Run Simulation</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="pauseSim()" id="pauseBtn">⏸ Pause</button>
+      <button class="btn btn-danger" onclick="resetSim()">↺ Reset</button>
+    </div>
+    <div class="cfg-group">
+      <button class="btn btn-both" onclick="runBoth()" id="runBothBtn">⚡ Run Both Controllers</button>
+    </div>
+    <div class="cfg-group" id="compareGroup" style="display:none">
+      <button class="btn btn-compare" onclick="runCompare()">📊 Compare Controllers</button>
+    </div>
+
+    <div class="cfg-section" style="margin-top:6px">Animation Speed</div>
+    <div class="speed-btns">
+      <button class="speed-btn" onclick="setSpeed(600)" id="spd1">1×</button>
+      <button class="speed-btn act" onclick="setSpeed(200)" id="spd2">2×</button>
+      <button class="speed-btn" onclick="setSpeed(50)" id="spd3">5×</button>
+      <button class="speed-btn" onclick="setSpeed(8)" id="spd4">Max</button>
+    </div>
+
+    <div class="sim-progress" id="simProgress">
+      <span class="pt">Time: 0 min</span> · Idle
+      <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    </div>
+
+    <!-- Objective Weights Drawer -->
+    <div class="drawer open">
+      <div class="drawer-hdr" onclick="this.parentElement.classList.toggle('open')">
+        <span>Objective Weights</span>
+        <span style="font-size:10px;color:var(--accent)" id="weightSumTxt">Σ = 1.00</span>
+      </div>
+      <div class="drawer-bdy">
+        <div style="margin-bottom:6px">
+          <label style="display:flex;justify-content:space-between;font-size:10px">
+            <span>wP Priority</span><b id="wPv">0.20</b>
+          </label>
+          <input type="range" id="wP" min="1" max="10" value="4" oninput="updateWeights()">
+        </div>
+        <div style="margin-bottom:6px">
+          <label style="display:flex;justify-content:space-between;font-size:10px">
+            <span>wW Wait Time</span><b id="wWv">0.15</b>
+          </label>
+          <input type="range" id="wW" min="1" max="10" value="3" oninput="updateWeights()">
+        </div>
+        <div style="margin-bottom:6px">
+          <label style="display:flex;justify-content:space-between;font-size:10px">
+            <span>wD Delay Red.</span><b id="wDv">0.15</b>
+          </label>
+          <input type="range" id="wD" min="1" max="10" value="3" oninput="updateWeights()">
+        </div>
+        <div style="margin-bottom:6px">
+          <label style="display:flex;justify-content:space-between;font-size:10px">
+            <span>wT Completion</span><b id="wTv">0.20</b>
+          </label>
+          <input type="range" id="wT" min="1" max="10" value="4" oninput="updateWeights()">
+        </div>
+        <div style="margin-bottom:6px">
+          <label style="display:flex;justify-content:space-between;font-size:10px">
+            <span>wC Downstream</span><b id="wCv">0.15</b>
+          </label>
+          <input type="range" id="wC" min="1" max="10" value="3" oninput="updateWeights()">
+        </div>
+        <div style="margin-bottom:8px">
+          <label style="display:flex;justify-content:space-between;font-size:10px">
+            <span>wF Fairness</span><b id="wFv">0.15</b>
+          </label>
+          <input type="range" id="wF" min="1" max="10" value="3" oninput="updateWeights()">
+        </div>
+        <button class="btn btn-secondary" style="padding:4px 8px;font-size:10px" onclick="resetWeights()">Reset to Defaults</button>
+      </div>
+    </div>
+
+    <!-- Optimization Objective Drawer -->
+    <div class="drawer">
+      <div class="drawer-hdr" onclick="this.parentElement.classList.toggle('open')">
+        <span>📐 Mathematical Formulation</span>
+        <span>▾</span>
+      </div>
+      <div class="drawer-bdy" style="font-size:10px">
+        <b>Maximize Multi-Objective Index:</b><br>
+        <code>J = wP·P + wW·(1-Ŵ) + wD·(1-D̂) + wT·Tprog + wC·Cflow + wF·Ffair</code><br><br>
+        <b>Hard Safety Constraints:</b><br>
+        • Track Occupancy: Occupants ≤ Capacity<br>
+        • Safety Headway: Headway ≥ Hmin<br>
+        • Junction Mutex: No conflicting cross-routes<br>
+        • Disrupted Segments: Zero passage when blocked
+      </div>
+    </div>
+
+    <!-- Metric Definitions Drawer -->
+    <div class="drawer">
+      <div class="drawer-hdr" onclick="this.parentElement.classList.toggle('open')">
+        <span>📖 Metric Definitions</span>
+        <span>▾</span>
+      </div>
+      <div class="drawer-bdy" style="font-size:10px">
+        • <b>Fleet Progress:</b> % of total planned nominal route work completed.<br>
+        • <b>Remaining Work:</b> Unfinished nominal travel time.<br>
+        • <b>Effective Completion:</b> Sum of all train progress fractions.<br>
+        • <b>Throughput:</b> Completed trains per sim hr.<br>
+        • <b>Delay:</b> <code>actualArrival - scheduledArrival</code> (completed).<br>
+        • <b>Waiting Time:</b> Real queued stoppage time.<br>
+        • <b>On-Time:</b> Delay ≤ 5 min among completed.<br>
+        • <b>Utilization:</b> Capacity-time integral ratio.
+      </div>
+    </div>
+
+    <div style="height:14px"></div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="sim-main">
+
+    <!-- Methodological Info Banner -->
+    <div class="method-banner">
+      <span style="font-size:16px">💡</span>
+      <span><b>Research Evaluation Methodology:</b> For fixed-horizon railway traffic control, completed-train throughput alone is an incomplete measure. The framework evaluates the entire fleet state at the simulation horizon using <b>Fleet Progress (%)</b> and <b>Remaining Journey Work (min)</b> to accurately reflect unfinished train progression.</span>
+    </div>
+
+    <!-- Control Bar -->
+    <div class="control-bar">
+      <div>
+        <div class="cb-label">Scenario</div>
+        <div class="cb-val" id="cbScenario">Peak Bottleneck</div>
+      </div>
+      <div class="cb-sep"></div>
+      <div>
+        <div class="cb-label">Controller</div>
+        <div class="cb-val" id="cbCtrl">Proposed Multi-Objective</div>
+      </div>
+      <div class="cb-sep"></div>
+      <div>
+        <div class="cb-label">Simulation Time</div>
+        <div class="cb-time" id="cbTime">0 / 180 min</div>
+      </div>
+      <div class="cb-sep"></div>
+      <div>
+        <div class="cb-label">Progress & Status</div>
+        <div class="cb-val" id="cbStatusContainer">
+          <span class="status-tag st-idle" id="cbStatusTag">Idle</span>
+          <span style="font-size:11px;color:var(--muted2);margin-left:6px" id="cbSummaryText">0 / 0 Completed · 0.0% Fleet Progress</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Simulation Horizon — Comprehensive Fleet State Card -->
+    <div class="horizon-card" id="horizonStateCard">
+      <div class="hc-title">🏁 Simulation Horizon — Comprehensive Fleet State Evaluation</div>
+      <div class="hc-grid">
+        <div class="hc-item">
+          <div class="hc-val" id="hcFleetProg">0.0%</div>
+          <div class="hc-lbl">Fleet Progress</div>
+        </div>
+        <div class="hc-item">
+          <div class="hc-val" id="hcRemWork" style="color:var(--amber)">0 min</div>
+          <div class="hc-lbl">Remaining Work</div>
+        </div>
+        <div class="hc-item">
+          <div class="hc-val" id="hcMeanRem">0.0 min</div>
+          <div class="hc-lbl">Mean Rem. Journey</div>
+        </div>
+        <div class="hc-item">
+          <div class="hc-val" id="hcEffComp">0.0 / 0</div>
+          <div class="hc-lbl">Effective Completion</div>
+        </div>
+        <div class="hc-item">
+          <div class="hc-val" id="hcComp">0 / 0</div>
+          <div class="hc-lbl">Completed Trains</div>
+        </div>
+        <div class="hc-item">
+          <div class="hc-val" id="hcThru">0.00 t/hr</div>
+          <div class="hc-lbl">Throughput</div>
+        </div>
+        <div class="hc-item">
+          <div class="hc-val" id="hcWait" style="color:var(--text2)">0 min</div>
+          <div class="hc-lbl">Total Waiting</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Network Panel -->
+    <div class="network-panel">
+      <div class="network-header">
+        <h3>Railway Network — Live Simulation (Click track or station to inspect)</h3>
+        <div class="net-legend">
+          <div class="leg-item"><div class="leg-dot" style="background:#5b8af0"></div>Express</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#2dd4a0"></div>Passenger</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#f07b3d"></div>Freight</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#a78bfa"></div>Regional</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#f05b5b"></div>Occupied</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#f0a83d"></div>Congested</div>
+        </div>
+      </div>
+      <div class="conflict-pop" id="conflictPop"></div>
+      <div class="info-modal" id="infoModal">
+        <div class="modal-hdr"><span id="modalTitle">Section Inspector</span><span class="close-btn" onclick="closeModal()">✕</span></div>
+        <div id="modalBody"></div>
+      </div>
+      <canvas id="netCanvas"></canvas>
+    </div>
+
+    <!-- 8-KPI ROW: PRIMARY FLEET & OPERATIONAL METRICS -->
+    <div class="kpi-row-8">
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--cyan)" id="kFleetProg">0.0%</div>
+        <div class="kpi-lbl">Fleet Progress</div>
+        <div class="kpi-sub">Total nominal work done</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--amber)" id="kRemWork">0 m</div>
+        <div class="kpi-lbl">Remaining Work</div>
+        <div class="kpi-sub" id="kMeanRemSub">Mean: 0.0 m/unfin</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" id="kThru">0.00</div>
+        <div class="kpi-lbl">Throughput (t/hr)</div>
+        <div class="kpi-sub" id="kEffCompSub">Completed: 0/0 (Eff: 0.0)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--red)" id="kDelay">0.0 m</div>
+        <div class="kpi-lbl">Avg Arrival Delay</div>
+        <div class="kpi-sub">Completed trains only</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--text2)" id="kWait">0.0 m</div>
+        <div class="kpi-lbl">Avg Waiting Time</div>
+        <div class="kpi-sub" id="kTotWaitSub">Total: 0 min</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--red)" id="kConflicts">0</div>
+        <div class="kpi-lbl">Conflicts</div>
+        <div class="kpi-sub">Contention events</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--green)" id="kOnTime">0%</div>
+        <div class="kpi-lbl">On-Time Arrivals</div>
+        <div class="kpi-sub">≤ 5 min of schedule</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--green)" id="kFair">1.00</div>
+        <div class="kpi-lbl">Jain's Fairness</div>
+        <div class="kpi-sub" id="kUtilSub">Peak Util: 0.0%</div>
+      </div>
+    </div>
+
+    <!-- Lower: Charts + Progress-Aware Train Table -->
+    <div class="lower-grid">
+      <div class="charts-panel">
+        <div>
+          <div class="chart-hdr">
+            <div class="chart-title">Cumulative Completed Trains & Fleet Progress</div>
+            <span style="font-size:10px;color:var(--muted2)" id="chartTimeTxt">Sim Horizon Tracking</span>
+          </div>
+          <div class="chart-container"><canvas class="ch" id="liveProgChart" height="130"></canvas></div>
+        </div>
+        <div>
+          <div class="chart-hdr">
+            <div class="chart-title">Section Capacity Utilization (%)</div>
+            <div>
+              <button class="chart-toggle-btn act" id="btnUtilAvg" onclick="toggleUtilChart('avg')">Average</button>
+              <button class="chart-toggle-btn" id="btnUtilPeak" onclick="toggleUtilChart('peak')">Peak</button>
+            </div>
+          </div>
+          <div class="chart-container"><canvas class="ch" id="utilChart" height="130"></canvas></div>
+        </div>
+      </div>
+      <div class="train-table-wrap">
+        <h4>
+          <span>Progress-Aware Fleet Status — <span id="trainCountLabel">0 trains</span></span>
+          <span style="font-size:10px;color:var(--cyan)" id="onTimeBadge">Fleet: 0.0% done</span>
+        </h4>
+        <div class="train-table-scroll">
+          <table class="ttable" id="trainTable">
+            <thead>
+              <tr>
+                <th>Train</th><th>Type</th><th>Route</th><th>Status</th>
+                <th>Progress</th><th>Rem. Work</th><th>Wait</th><th>Delay</th>
+                <th>Sched Arr</th><th>Act Arr</th>
+              </tr>
+            </thead>
+            <tbody id="trainTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Decision Panel -->
+    <div class="decision-panel" id="decisionPanel">
+      <div class="dp-header">🧠 Real-Time Controller Decision Analysis</div>
+      <div class="dp-grid" id="dpContent"></div>
+    </div>
+
+    <!-- Event Log -->
+    <div class="event-log-wrap">
+      <div class="log-header">
+        <h4>Event Log</h4>
+        <div class="log-filters">
+          <button class="log-filter-btn act" onclick="setLogFilter('ALL',this)">All</button>
+          <button class="log-filter-btn" onclick="setLogFilter('CONFLICT',this)">Conflict</button>
+          <button class="log-filter-btn" onclick="setLogFilter('DISPATCH',this)">Dispatch</button>
+          <button class="log-filter-btn" onclick="setLogFilter('DECISION',this)">Decision</button>
+          <button class="log-filter-btn" onclick="setLogFilter('DONE',this)">Complete</button>
+        </div>
+        <span id="logCount" style="font-size:10px;color:var(--muted);margin-left:4px"></span>
+        <button class="log-clear" onclick="clearLog()">Clear</button>
+      </div>
+      <div class="log-scroll" id="logWrap"></div>
+    </div>
+
+  </main>
+</div>
+</div>
+
+<!-- ═══════ COMPARE TAB ═══════ -->
+<div class="tab-panel" id="panel-compare">
+  <div class="compare-wrap">
+    <div class="compare-empty" id="compareEmpty">
+      <div class="ic">📊</div>
+      <h2 style="margin-bottom:8px">No Comparison Data Available</h2>
+      <p>Click <b>⚡ Run Both Controllers</b> in the Simulation tab to execute both Traditional and Proposed controllers on identical initial conditions.</p>
+    </div>
+    <div id="compareContent" style="display:none">
+      <h2 class="compare-title">Controller Comparison & Fleet Horizon Evaluation</h2>
+      <p class="compare-sub" id="cmpSubtitle"></p>
+      
+      <div class="fair-badges">
+        <div class="fair-badge">✓ Identical Network Infrastructure</div>
+        <div class="fair-badge">✓ Identical Train Schedules & Routes</div>
+        <div class="fair-badge">✓ Identical Random Seed</div>
+        <div class="fair-badge">✓ Identical Disruption Events</div>
+        <div class="fair-badge" style="background:rgba(91,138,240,0.1);border-color:rgba(91,138,240,0.3);color:var(--accent)">✓ Dispatch Controller Only Varies</div>
+      </div>
+
+      <!-- Categorized Metrics Table -->
+      <div class="cmp-table-wrap">
+        <h3>
+          <span>Quantitative Performance Comparison (Horizon-Based & Completion-Based)</span>
+          <button class="btn btn-secondary" style="padding:4px 10px;font-size:10.5px;width:auto" onclick="exportComparisonCSV()">📥 Export Comparison CSV</button>
+        </h3>
+        <table class="cmp-table">
+          <thead><tr><th>Performance Dimension & Metric</th><th>Traditional Greedy Controller</th><th>Proposed Multi-Objective Controller</th><th>Absolute Difference</th><th>Relative Change (%)</th></tr></thead>
+          <tbody id="cmpTbody"></tbody>
+        </table>
+      </div>
+
+      <!-- 6 Comparison Charts (Time-Series Curves & Histograms) -->
+      <div class="charts-grid-6" id="cmpChartsGrid"></div>
+
+      <!-- Performance Trade-Offs Panel -->
+      <div class="cmp-table-wrap" style="padding:16px">
+        <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:4px">⚖️ Multi-Objective Performance Trade-Off Analysis</div>
+        <div style="font-size:11px;color:var(--muted2);margin-bottom:12px">Evaluating trade-offs across competing objectives rather than claiming single-metric dominance.</div>
+        <div class="tradeoff-grid" id="tradeoffGrid"></div>
+      </div>
+
+      <!-- Data-Driven Decision Difference Analysis ("Why the Result Differed") -->
+      <div class="cmp-table-wrap" style="padding:16px">
+        <div style="font-size:13px;font-weight:700;color:var(--cyan);margin-bottom:4px">🔍 Decision Divergence Analysis ("Why the Results Differed")</div>
+        <div style="font-size:11px;color:var(--muted2);margin-bottom:12px">Data-driven identification of where and why controller actions diverged during the simulation horizon.</div>
+        <div id="decisionDiffContent"></div>
+      </div>
+
+      <!-- Real Decision Explanations Section -->
+      <div class="cmp-table-wrap" id="lastDecisionSection">
+        <h3><span>Real Multi-Objective Look-Ahead Decision Explanations from Simulation</span></h3>
+        <div style="padding:14px" id="lastDecisionContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ ANALYSIS TAB ═══════ -->
+<div class="tab-panel" id="panel-analysis">
+  <div class="analysis-wrap">
+    <div class="analysis-empty" id="analysisEmpty">
+      <div class="ic">🔬</div>
+      <h2 style="margin-bottom:8px">Run a Simulation First</h2>
+      <p>Run a simulation to generate delay heatmaps, bottleneck congestion ratings, and fleet progress curves.</p>
+    </div>
+    <div id="analysisContent" style="display:none">
+      <div class="analysis-grid">
+        <div class="analysis-card">
+          <h3><span>Cumulative Completed Trains & Fleet Progress Curves</span></h3>
+          <canvas class="ch" id="analysisCurvesChart" height="240"></canvas>
+        </div>
+        <div class="analysis-card">
+          <h3><span>Fleet Route Progress Distribution (Histogram)</span></h3>
+          <canvas class="ch" id="analysisDistChart" height="240"></canvas>
+        </div>
+        <div class="analysis-card full-width">
+          <h3>
+            <span>Station Delay Heatmap — Average Arrival Delay (min) by Time Window</span>
+          </h3>
+          <canvas class="heatmap-canvas" id="heatmapCanvas" height="340"></canvas>
+          <div class="heatmap-legend">
+            <span>Delay Legend:</span>
+            <div class="hl-item"><div class="hl-box" style="background:#10b981"></div>0–3m (Minimal)</div>
+            <div class="hl-item"><div class="hl-box" style="background:#38bdf8"></div>3–7m (Low)</div>
+            <div class="hl-item"><div class="hl-box" style="background:#f59e0b"></div>7–12m (Moderate)</div>
+            <div class="hl-item"><div class="hl-box" style="background:#f97316"></div>12–20m (High)</div>
+            <div class="hl-item"><div class="hl-box" style="background:#ef4444"></div>20m+ (Severe)</div>
+            <div class="hl-item"><div class="hl-box" style="background:#141c2e;border:1px solid #243350"></div>N/A (No Traffic)</div>
+          </div>
+        </div>
+        <div class="analysis-card">
+          <h3>Most Congested Railway Sections (Composite Congestion Index)</h3>
+          <div class="bottleneck-list" id="bottleneckList"></div>
+        </div>
+        <div class="analysis-card">
+          <h3>Conflict Analysis (Distribution by Type & Section)</h3>
+          <div id="conflictAnalysisContent"></div>
+        </div>
+        <div class="analysis-card full-width">
+          <h3>Train-Type Operational Breakdown</h3>
+          <div id="trainTypeAnalysisContent"></div>
+        </div>
+        <div class="analysis-card full-width">
+          <h3>
+            <span>Progress-Aware Fleet Operational Record</span>
+            <button class="btn btn-secondary" style="padding:4px 10px;font-size:10.5px;width:auto" onclick="exportTrainsCSV()">📥 Export Trains CSV</button>
+          </h3>
+          <div class="train-stats-table-wrap">
+            <table class="ttable" style="font-size:11.5px">
+              <thead>
+                <tr>
+                  <th>Train ID</th><th>Type</th><th>Route</th><th>Status</th>
+                  <th>Route Progress</th><th>Remaining Work</th><th>Sched Dep.</th><th>Act Dep.</th>
+                  <th>Sched Arr.</th><th>Act Arr.</th><th>Arrival Delay</th><th>Total Wait</th><th>Priority</th>
+                </tr>
+              </thead>
+              <tbody id="analysisTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ EXPERIMENTS TAB ═══════ -->
+<div class="tab-panel" id="panel-experiments">
+  <div class="exp-wrap">
+    <div class="exp-hero">
+      <div>
+        <h2 style="font-size:20px;font-weight:800;color:var(--text2)">Monte Carlo Research Experiment Mode</h2>
+        <p style="font-size:12px;color:var(--muted2);margin-top:2px">Execute paired experimental trials across randomized seeds to evaluate statistical significance (Mean ± SD) across both horizon and completion metrics.</p>
+      </div>
+      <div class="exp-controls">
+        <div>
+          <label style="font-size:10px;color:var(--muted2);display:block;margin-bottom:2px">Scenario</label>
+          <select id="expScenarioSel" style="width:180px">
+            <option value="peak" selected>Peak Bottleneck</option>
+            <option value="normal">Normal Operations</option>
+            <option value="delayed">Delay Propagation</option>
+            <option value="junction">Junction Conflict</option>
+            <option value="disruption">Section Disruption</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--muted2);display:block;margin-bottom:2px">Runs (Trials)</label>
+          <select id="expRunsSel" style="width:80px">
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--muted2);display:block;margin-bottom:2px">Start Seed</label>
+          <input type="number" id="expBaseSeed" value="42" style="width:65px;padding:6px;background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:5px;font-size:11px">
+        </div>
+        <div style="padding-top:14px">
+          <button class="btn btn-primary" onclick="runBatchExperiment()" id="btnBatchRun" style="width:auto;padding:8px 16px">⚡ Run Experiment</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sim-progress" id="expProgressBar" style="display:none;margin:0 0 16px 0">
+      <span class="pt" id="expProgressTxt">Running Trial 1 of 5...</span>
+      <div class="prog-bar"><div class="prog-fill" id="expProgressFill" style="width:0%"></div></div>
+    </div>
+
+    <div class="exp-table-wrap" id="expResultsSection" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border)">
+        <h3 style="border-bottom:none;padding:0">Statistical Results (Paired Trials Across Identical Seeds)</h3>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:10.5px;width:auto" onclick="exportBatchCSV()">📥 Export All Trials CSV</button>
+      </div>
+      <table class="cmp-table">
+        <thead>
+          <tr>
+            <th>Performance Metric</th>
+            <th>Traditional Controller (Mean ± SD)</th>
+            <th>Proposed Controller (Mean ± SD)</th>
+            <th>Absolute Difference</th>
+            <th>Relative Change (%)</th>
+            <th>Paired Direction</th>
+          </tr>
+        </thead>
+        <tbody id="expResultsTbody"></tbody>
+      </table>
+    </div>
+
+    <div class="exp-table-wrap" id="expMatrixSection" style="display:none">
+      <h3>Trial-by-Trial Breakdown</h3>
+      <div style="overflow-x:auto">
+        <table class="ttable" style="font-size:11.5px">
+          <thead>
+            <tr>
+              <th>Trial</th><th>Seed</th>
+              <th>Trad Fleet Prog</th><th>Prop Fleet Prog</th>
+              <th>Trad Rem. Work</th><th>Prop Rem. Work</th>
+              <th>Trad Completed</th><th>Prop Completed</th>
+              <th>Trad Delay</th><th>Prop Delay</th>
+              <th>Trad Wait</th><th>Prop Wait</th>
+            </tr>
+          </thead>
+          <tbody id="expMatrixTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ JAVASCRIPT ═══════ -->
+<script>
+// ════════════════════════════════════════════════════════════
+//  CONSTANTS & CONFIG
+// ════════════════════════════════════════════════════════════
+const PRIO = { EXPRESS:4, PASSENGER:3, REGIONAL:2, FREIGHT:1 };
+const T_COL = { EXPRESS:'#5b8af0', PASSENGER:'#2dd4a0', FREIGHT:'#f07b3d', REGIONAL:'#a78bfa' };
+const T_SHORT = { EXPRESS:'EXP', PASSENGER:'PAS', FREIGHT:'FRT', REGIONAL:'REG' };
+
+const NET_DEF = {
+  stations:{
+    A:{label:'A',name:'Station A', x:72,  y:115, terminus:true},
+    B:{label:'B',name:'Station B', x:210, y:115, terminus:false, junction:true},
+    C:{label:'C',name:'Station C', x:370, y:115, terminus:false, junction:true},
+    D:{label:'D',name:'Station D', x:530, y:115, terminus:false, junction:true},
+    E:{label:'E',name:'Station E', x:690, y:115, terminus:true},
+    F:{label:'F',name:'Station F', x:130, y:290, terminus:false},
+    G:{label:'G',name:'Station G', x:370, y:290, terminus:false, junction:true, central:true},
+    H:{label:'H',name:'Station H', x:595, y:290, terminus:false, junction:true},
+    I:{label:'I',name:'Station I', x:300, y:415, terminus:false},
+    J:{label:'J',name:'Station J', x:480, y:415, terminus:true},
+  },
+  sections:{
+    S1: {id:'S1',  from:'A', to:'B', travelTime:15, type:'double', capacity:2, bottleneck:false, occupiedTrains:[], blocked:false},
+    S2: {id:'S2',  from:'B', to:'C', travelTime:18, type:'single', capacity:1, bottleneck:true,  label:'BOTTLENECK', occupiedTrains:[], blocked:false},
+    S3: {id:'S3',  from:'C', to:'D', travelTime:14, type:'double', capacity:2, bottleneck:false, occupiedTrains:[], blocked:false},
+    S4: {id:'S4',  from:'D', to:'E', travelTime:12, type:'single', capacity:1, bottleneck:false, occupiedTrains:[], blocked:false},
+    S5: {id:'S5',  from:'B', to:'F', travelTime:20, type:'double', capacity:2, bottleneck:false, occupiedTrains:[], blocked:false},
+    S6: {id:'S6',  from:'F', to:'G', travelTime:15, type:'single', capacity:1, bottleneck:false, occupiedTrains:[], blocked:false},
+    S7: {id:'S7',  from:'C', to:'G', travelTime:16, type:'single', capacity:1, bottleneck:false, occupiedTrains:[], blocked:false},
+    S8: {id:'S8',  from:'D', to:'H', travelTime:18, type:'single', capacity:1, bottleneck:false, occupiedTrains:[], blocked:false},
+    S9: {id:'S9',  from:'G', to:'I', travelTime:20, type:'double', capacity:2, bottleneck:false, occupiedTrains:[], blocked:false},
+    S10:{id:'S10', from:'I', to:'J', travelTime:14, type:'single', capacity:1, bottleneck:false, occupiedTrains:[], blocked:false},
+    S11:{id:'S11', from:'G', to:'H', travelTime:12, type:'single', capacity:1, bottleneck:true,  label:'CRITICAL', occupiedTrains:[], blocked:false},
+    S12:{id:'S12', from:'H', to:'E', travelTime:15, type:'single', capacity:1, bottleneck:false, occupiedTrains:[], blocked:false},
+  }
+};
+
+const ROUTES = {
+  AE_top:    ['A','B','C','D','E'],
+  AE_mix:    ['A','B','F','G','H','E'],
+  AJ:        ['A','B','F','G','I','J'],
+  AH:        ['A','B','F','G','H'],
+  EJ:        ['E','H','G','I','J'],
+  FE:        ['F','G','H','E'],
+  FJ:        ['F','G','I','J'],
+  CJ:        ['C','G','I','J'],
+  EA_top:    ['E','D','C','B','A'],
+  EA_mix:    ['E','H','G','F','B','A'],
+  JA:        ['J','I','G','F','B','A'],
+  DG:        ['D','H','G'],
+  BJ:        ['B','F','G','I','J'],
+  CH:        ['C','G','H'],
+  AD:        ['A','B','C','D'],
+};
+
+function makeRng(seed){
+  let s = (seed >>> 0) || 42;
+  return ()=>{ s=(s*1664525+1013904223)>>>0; return s/4294967296; };
+}
+
+function getSectionBetween(a,b,net){
+  for(const s of Object.values((net||NET_DEF).sections))
+    if((s.from===a&&s.to===b)||(s.from===b&&s.to===a)) return s;
+  return null;
+}
+
+// ════════════════════════════════════════════════════════════
+//  TRAIN & NOMINAL SCHEDULE GENERATION
+// ════════════════════════════════════════════════════════════
+function computeTrainSchedule(route, startTime, net){
+  const schedules = {};
+  let curT = startTime;
+  schedules[route[0]] = curT;
+  for(let i=0; i<route.length-1; i++){
+    const sec = getSectionBetween(route[i], route[i+1], net);
+    curT += sec ? sec.travelTime : 15;
+    schedules[route[i+1]] = curT;
+  }
+  return {
+    scheduledDeparture: startTime,
+    scheduledArrival: curT,
+    nominalDuration: curT - startTime,
+    stationSchedules: schedules
+  };
+}
+
+function makeTrain(id, type, route, startTime, net){
+  const sched = computeTrainSchedule(route, startTime, net || NET_DEF);
+  return {
+    id,
+    type,
+    route,
+    origin: route[0],
+    destination: route[route.length-1],
+    startTime,
+    priority: PRIO[type],
+    stationIdx: 0,
+    status: 'SCHEDULED', // SCHEDULED, WAITING, MOVING, COMPLETED, BLOCKED
+    currentSection: null,
+    waitingSince: null,
+    entryTime: null,
+    scheduledDeparture: sched.scheduledDeparture,
+    actualDeparture: null,
+    scheduledArrival: sched.scheduledArrival,
+    actualArrival: null,
+    nominalDuration: sched.nominalDuration,
+    stationSchedules: sched.stationSchedules,
+    waitTotal: 0,
+    delayTotal: 0,
+    sectionsCompleted: 0
+  };
+}
+
+function cloneTrain(t){
+  return JSON.parse(JSON.stringify(t));
+}
+
+// ════════════════════════════════════════════════════════════
+//  ROUTE PROGRESS & REMAINING WORK CALCULATIONS
+// ════════════════════════════════════════════════════════════
+function getTrainProgress(t, simTime, net){
+  if(t.status === 'COMPLETED') return 1.0;
+  if(t.status === 'SCHEDULED') return 0.0;
+
+  // Completed nominal travel time of traversed sections
+  let completedNominal = 0;
+  for(let i=0; i<t.stationIdx; i++){
+    const sec = getSectionBetween(t.route[i], t.route[i+1], net || NET_DEF);
+    completedNominal += (sec ? sec.travelTime : 15);
+  }
+
+  // Traversed fraction in current moving section
+  if(t.status === 'MOVING' && t.currentSection && t.entryTime !== null){
+    const sec = (net || NET_DEF).sections[t.currentSection];
+    if(sec){
+      const elapsed = Math.max(0, simTime - t.entryTime);
+      const frac = Math.min(1.0, elapsed / sec.travelTime);
+      completedNominal += frac * sec.travelTime;
+    }
+  }
+
+  const totalNominal = t.nominalDuration || 60;
+  return Math.min(1.0, Math.max(0.0, completedNominal / totalNominal));
+}
+
+function getTrainRemainingWork(t, simTime, net){
+  if(t.status === 'COMPLETED') return 0;
+  const progress = getTrainProgress(t, simTime, net);
+  const totalNominal = t.nominalDuration || 60;
+  return Math.max(0, totalNominal * (1.0 - progress));
+}
+
+function computeFleetMetrics(state){
+  const N = state.trains.length;
+  if(N === 0) return { fleetProgress: 0, totalRemainingWork: 0, meanRemainingJourney: 0, effectiveCompletion: 0, unfinishedCount: 0, progressBins: [0,0,0,0,0] };
+
+  let sumProgress = 0;
+  let totalRemainingWork = 0;
+  let unfinishedCount = 0;
+  const progressBins = [0, 0, 0, 0, 0]; // 0-25, 25-50, 50-75, 75-99, 100
+
+  for(const t of state.trains){
+    const p = getTrainProgress(t, state.simTime, state.net);
+    sumProgress += p;
+    if(t.status !== 'COMPLETED'){
+      unfinishedCount++;
+      totalRemainingWork += getTrainRemainingWork(t, state.simTime, state.net);
+    }
+
+    if(p >= 1.0) progressBins[4]++;
+    else if(p >= 0.75) progressBins[3]++;
+    else if(p >= 0.50) progressBins[2]++;
+    else if(p >= 0.25) progressBins[1]++;
+    else progressBins[0]++;
+  }
+
+  const fleetProgress = (sumProgress / N) * 100;
+  const effectiveCompletion = sumProgress;
+  const meanRemainingJourney = unfinishedCount > 0 ? (totalRemainingWork / unfinishedCount) : 0;
+
+  return {
+    fleetProgress,
+    totalRemainingWork,
+    meanRemainingJourney,
+    effectiveCompletion,
+    unfinishedCount,
+    progressBins
+  };
+}
+
+// ════════════════════════════════════════════════════════════
+//  SCENARIOS
+// ════════════════════════════════════════════════════════════
+const SCENARIOS = {
+  normal:{
+    name:'Normal Operations (20 trains)',duration:120,
+    gen(seed){
+      const r=makeRng(seed), trains=[];
+      const defs=[
+        ['EXP001','EXPRESS','AE_top',0],['EXP002','EXPRESS','AE_top',18],
+        ['PAS001','PASSENGER','EA_top',6],['PAS002','PASSENGER','AE_mix',12],
+        ['PAS003','PASSENGER','FJ',10],['PAS004','PASSENGER','EJ',20],
+        ['FRT001','FREIGHT','AJ',4],['FRT002','FREIGHT','AE_top',28],
+        ['REG001','REGIONAL','AD',8],['REG002','REGIONAL','BJ',14],
+        ['REG003','REGIONAL','CH',16],['REG004','REGIONAL','DG',22],
+        ['EXP003','EXPRESS','AE_mix',24],['PAS005','PASSENGER','FE',18],
+        ['FRT003','FREIGHT','EA_mix',15],['REG005','REGIONAL','CJ',26],
+        ['EXP004','EXPRESS','EA_top',30],['PAS006','PASSENGER','AJ',32],
+        ['FRT004','FREIGHT','JA',25],['REG006','REGIONAL','AH',35],
+      ];
+      defs.forEach(([id,type,rk,st])=>{
+        trains.push(makeTrain(id,type,ROUTES[rk],st+Math.floor(r()*3)));
+      });
+      return trains;
+    }
+  },
+  peak:{
+    name:'Peak Bottleneck (45 trains)',duration:180,
+    gen(seed){
+      const r=makeRng(seed), trains=[];
+      for(let i=0;i<10;i++) trains.push(makeTrain(`EXP${String(i+1).padStart(3,'0')}`,
+        'EXPRESS',ROUTES['AE_top'], i*7+Math.floor(r()*4)));
+      for(let i=0;i<6;i++) trains.push(makeTrain(`EXP${String(i+11).padStart(3,'0')}`,
+        'EXPRESS',ROUTES['EA_top'], i*8+Math.floor(r()*5)+4));
+      const pRts=['AE_mix','FE','EJ','FJ','CJ','AJ','AH','EA_mix','AE_mix','FJ'];
+      for(let i=0;i<10;i++) trains.push(makeTrain(`PAS${String(i+1).padStart(3,'0')}`,
+        'PASSENGER',ROUTES[pRts[i]], i*6+Math.floor(r()*4)+2));
+      const rRts=['BJ','CH','DG','AD','AH','CJ','FJ','BJ','CH','AD'];
+      for(let i=0;i<10;i++) trains.push(makeTrain(`REG${String(i+1).padStart(3,'0')}`,
+        'REGIONAL',ROUTES[rRts[i]], i*7+Math.floor(r()*4)+1));
+      const fRts=['AE_top','AJ','EA_mix','JA','AE_mix','FE','AE_top','EA_top','EJ'];
+      for(let i=0;i<9;i++) trains.push(makeTrain(`FRT${String(i+1).padStart(3,'0')}`,
+        'FREIGHT',ROUTES[fRts[i]], i*9+Math.floor(r()*5)+3));
+      return trains;
+    }
+  },
+  delayed:{
+    name:'Delay Propagation (35 trains)',duration:180,
+    gen(seed){
+      const r=makeRng(seed), trains=[];
+      trains.push(makeTrain('EXP001','EXPRESS',ROUTES['AE_top'],24));
+      trains[0].scheduledDeparture = 4;
+      trains[0].scheduledArrival -= 20;
+      for(let i=1;i<8;i++) trains.push(makeTrain(`EXP${String(i+1).padStart(3,'0')}`,
+        'EXPRESS',ROUTES['AE_top'], i*9+Math.floor(r()*3)));
+      const pRts=['AE_mix','FE','EJ','FJ','AJ','EA_top','CJ','AH','FE','AE_mix'];
+      for(let i=0;i<10;i++) trains.push(makeTrain(`PAS${String(i+1).padStart(3,'0')}`,
+        'PASSENGER',ROUTES[pRts[i]], i*7+Math.floor(r()*4)+2));
+      const rRts=['AD','BJ','CH','DG','AH','CJ','FJ','AD','BJ'];
+      for(let i=0;i<9;i++) trains.push(makeTrain(`REG${String(i+1).padStart(3,'0')}`,
+        'REGIONAL',ROUTES[rRts[i]], i*8+Math.floor(r()*4)+1));
+      const fRts=['AE_top','AJ','JA','EA_mix','AE_mix','FE','AE_top'];
+      for(let i=0;i<7;i++) trains.push(makeTrain(`FRT${String(i+1).padStart(3,'0')}`,
+        'FREIGHT',ROUTES[fRts[i]], i*11+Math.floor(r()*5)+5));
+      return trains;
+    }
+  },
+  junction:{
+    name:'Junction Conflict at G (40 trains)',duration:180,
+    gen(seed){
+      const r=makeRng(seed), trains=[];
+      const eRts=['AE_mix','EA_mix','AJ','JA','FE','EJ','AE_mix','FJ','AH','CJ'];
+      for(let i=0;i<10;i++) trains.push(makeTrain(`EXP${String(i+1).padStart(3,'0')}`,
+        'EXPRESS',ROUTES[eRts[i]], i*6+Math.floor(r()*3)+2));
+      const pRts=['AE_top','EA_top','AJ','JA','FJ','FE','CJ','BJ','AH','CH','AE_mix','EA_mix'];
+      for(let i=0;i<12;i++) trains.push(makeTrain(`PAS${String(i+1).padStart(3,'0')}`,
+        'PASSENGER',ROUTES[pRts[i]], i*5+Math.floor(r()*4)+1));
+      const rRts=['BJ','AD','CH','DG','AH','CJ','FJ','BJ','CH','DG'];
+      for(let i=0;i<10;i++) trains.push(makeTrain(`REG${String(i+1).padStart(3,'0')}`,
+        'REGIONAL',ROUTES[rRts[i]], i*7+Math.floor(r()*3)+2));
+      const fRts=['AE_top','AJ','JA','AE_mix','EA_mix','FE','EJ','AJ'];
+      for(let i=0;i<8;i++) trains.push(makeTrain(`FRT${String(i+1).padStart(3,'0')}`,
+        'FREIGHT',ROUTES[fRts[i]], i*9+Math.floor(r()*5)+4));
+      return trains;
+    }
+  },
+  disruption:{
+    name:'Section Disruption (S7 Blocked t=60–95)',duration:180,
+    disruption:{section:'S7',from:60,to:95},
+    gen(seed){
+      const r=makeRng(seed), trains=[];
+      const eRts=['AE_mix','FE','EJ','AH','AE_mix','FE','EJ','AH','AE_top','EA_top'];
+      for(let i=0;i<10;i++) trains.push(makeTrain(`EXP${String(i+1).padStart(3,'0')}`,
+        'EXPRESS',ROUTES[eRts[i]], i*7+Math.floor(r()*4)+2));
+      const pRts=['CJ','CH','AE_top','EA_top','AJ','JA','AD','AE_top','EA_top','AJ','CJ','FJ'];
+      for(let i=0;i<12;i++) trains.push(makeTrain(`PAS${String(i+1).padStart(3,'0')}`,
+        'PASSENGER',ROUTES[pRts[i]], i*6+Math.floor(r()*4)+1));
+      const rRts=['CH','CJ','DG','BJ','AH','FJ','CH','CJ','AD','DG'];
+      for(let i=0;i<10;i++) trains.push(makeTrain(`REG${String(i+1).padStart(3,'0')}`,
+        'REGIONAL',ROUTES[rRts[i]], i*7+Math.floor(r()*3)+3));
+      const fRts=['AE_mix','FE','EJ','AE_top','EA_mix','AJ','JA','AE_mix'];
+      for(let i=0;i<8;i++) trains.push(makeTrain(`FRT${String(i+1).padStart(3,'0')}`,
+        'FREIGHT',ROUTES[fRts[i]], i*9+Math.floor(r()*5)+2));
+      return trains;
+    }
+  }
+};
+
+// ════════════════════════════════════════════════════════════
+//  SIMULATION STATE & STEPPING ENGINE
+// ════════════════════════════════════════════════════════════
+function curStation(t){ return t.route[t.stationIdx]; }
+function nxtStation(t){ return t.stationIdx+1<t.route.length?t.route[t.stationIdx+1]:null; }
+function getNextSec(t,net){
+  const n=nxtStation(t); if(!n) return null;
+  return getSectionBetween(curStation(t),n,net);
+}
+
+function getTrainWait(t, simTime){
+  let w = t.waitTotal;
+  if((t.status==='WAITING'||t.status==='BLOCKED') && t.waitingSince!==null){
+    w += Math.max(0, simTime - t.waitingSince);
+  }
+  return w;
+}
+
+function getTrainDelay(t, simTime){
+  if(t.status==='COMPLETED'){
+    return Math.max(0, t.actualArrival - t.scheduledArrival);
+  }
+  if(t.status==='SCHEDULED') return 0;
+  const curSt = curStation(t);
+  const schedT = t.stationSchedules[curSt] || (t.scheduledDeparture + t.sectionsCompleted*15);
+  return Math.max(0, simTime - schedT);
+}
+
+function makeSimState(scenarioKey,ctrlType,seed,trainPreset=null){
+  const net = JSON.parse(JSON.stringify(NET_DEF));
+  for(const s of Object.values(net.sections)){
+    s.occupiedTrains = [];
+    s.blocked = false;
+  }
+  const scenDef = SCENARIOS[scenarioKey];
+  const trains = trainPreset ? trainPreset.map(cloneTrain) : scenDef.gen(seed);
+  const queues = {};
+  for(const sid of Object.keys(net.sections)) queues[sid] = [];
+  const busyTime = {};
+  for(const sid of Object.keys(net.sections)) busyTime[sid] = 0;
+
+  return {
+    net,
+    trains,
+    ctrlType,
+    duration: scenDef.duration,
+    scenarioKey,
+    seed,
+    simTime: 0,
+    step: 0,
+    sectionQueues: queues,
+    sectionBusyTime: busyTime,
+    conflicts: [],
+    conflictSeq: 0,
+    dispatchHistory: [], // stores dispatch choices for divergence analysis
+    logs: [],
+    timeline: [], // stores time series snapshots every 5 mins
+    decisionLog: [],
+    disruption: scenDef.disruption || null,
+    heatmapData: {},
+    done: false,
+  };
+}
+
+function enqueueTrain(t,state){
+  const s = getNextSec(t, state.net);
+  if(!s) return;
+  const q = state.sectionQueues[s.id];
+  if(!q.find(x=>x.id===t.id)){
+    q.push(t);
+  }
+}
+
+function addLog(state,type,msg,trainId='',secId=''){
+  const ev = {time:state.simTime,type,msg,trainId,secId};
+  state.logs.push(ev);
+  if(state===globalState) renderLogEntry(ev);
+}
+
+function spawnTrains(state){
+  for(const t of state.trains){
+    if(t.status==='SCHEDULED' && t.startTime<=state.simTime){
+      t.status = 'WAITING';
+      t.waitingSince = state.simTime;
+      const nextSec = getNextSec(t, state.net);
+      if(nextSec && nextSec.blocked){
+        t.status = 'BLOCKED';
+      }
+      addLog(state,'SPAWN',`${t.id} (${t.type}) spawned at ${curStation(t)} | Route: ${t.route.join('→')}`,t.id);
+      enqueueTrain(t,state);
+    }
+  }
+}
+
+function applyDisruption(state){
+  if(!state.disruption) return;
+  const {section,from,to} = state.disruption;
+  const sec = state.net.sections[section];
+  if(!sec) return;
+  if(state.simTime>=from && state.simTime<to){
+    if(!sec.blocked){
+      sec.blocked = true;
+      addLog(state,'DISRUPTION',`⚠ Section ${section} BLOCKED from t=${from} to t=${to}min. Holding traffic.`,'',section);
+      const q = state.sectionQueues[section] || [];
+      q.forEach(t=>{ if(t.status==='WAITING') t.status='BLOCKED'; });
+    }
+  } else if(state.simTime>=to && sec.blocked){
+    sec.blocked = false;
+    addLog(state,'DISRUPTION',`✓ Section ${section} RESTORED at t=${state.simTime}min. Resuming dispatch.`,'',section);
+    const q = state.sectionQueues[section] || [];
+    q.forEach(t=>{ if(t.status==='BLOCKED') t.status='WAITING'; });
+  }
+}
+
+function updateMoving(state){
+  for(const t of state.trains){
+    if(t.status!=='MOVING') continue;
+    const sec = state.net.sections[t.currentSection];
+    if(!sec) continue;
+    if(state.simTime >= t.entryTime + sec.travelTime){
+      sec.occupiedTrains = sec.occupiedTrains.filter(id=>id!==t.id);
+      const freed = t.currentSection;
+      t.stationIdx++;
+      t.sectionsCompleted++;
+      t.currentSection = null;
+      t.entryTime = null;
+
+      const arrivedSt = curStation(t);
+      const schedAtSt = t.stationSchedules[arrivedSt] || state.simTime;
+      const stDelay = Math.max(0, state.simTime - schedAtSt);
+      t.delayTotal = stDelay;
+
+      addLog(state,'FREE',`${t.id} freed ${freed} → arrived at ${arrivedSt} (Delay: +${stDelay.toFixed(0)}m)`,t.id,freed);
+      recordHeatmap(state, arrivedSt, stDelay);
+
+      if(!nxtStation(t)){
+        t.status = 'COMPLETED';
+        t.actualArrival = state.simTime;
+        t.delayTotal = Math.max(0, t.actualArrival - t.scheduledArrival);
+        addLog(state,'DONE',`✅ ${t.id} COMPLETED route at ${arrivedSt} | Final Delay: +${t.delayTotal.toFixed(0)}m, Wait: ${t.waitTotal.toFixed(0)}m`,t.id);
+      } else {
+        const nextSec = getNextSec(t, state.net);
+        if(nextSec && nextSec.blocked){
+          t.status = 'BLOCKED';
+        } else {
+          t.status = 'WAITING';
+        }
+        t.waitingSince = state.simTime;
+        enqueueTrain(t, state);
+      }
+    }
+  }
+}
+
+function recordHeatmap(state, station, delay){
+  const window = Math.floor(state.simTime/30)*30;
+  if(!state.heatmapData[station]) state.heatmapData[station] = {};
+  if(!state.heatmapData[station][window]) state.heatmapData[station][window] = {total:0, count:0};
+  state.heatmapData[station][window].total += delay;
+  state.heatmapData[station][window].count++;
+}
+
+// ════════════════════════════════════════════════════════════
+//  CONTROLLERS (TRADITIONAL vs PROPOSED LOOK-AHEAD)
+// ════════════════════════════════════════════════════════════
+function traditionalScore(t, simTime){
+  const waited = getTrainWait(t, simTime);
+  const prioScore = (t.priority / 4.0) * 0.6;
+  const waitScore = Math.min(1.0, waited / 35.0) * 0.4;
+  return prioScore + waitScore;
+}
+
+function getWeights(){
+  const p = parseFloat(document.getElementById('wP')?.value)||4;
+  const w = parseFloat(document.getElementById('wW')?.value)||3;
+  const d = parseFloat(document.getElementById('wD')?.value)||3;
+  const t = parseFloat(document.getElementById('wT')?.value)||4;
+  const c = parseFloat(document.getElementById('wC')?.value)||3;
+  const f = parseFloat(document.getElementById('wF')?.value)||3;
+  const sum = p + w + d + t + c + f;
+  return {
+    wP: p/sum, wW: w/sum, wD: d/sum, wT: t/sum, wC: c/sum, wF: f/sum
+  };
+}
+
+function proposedEvaluate(t, secId, state){
+  const net = state.net;
+  const sec = net.sections[secId];
+  const simTime = state.simTime;
+  const W = getWeights();
+  const waited = getTrainWait(t, simTime);
+  const curDelay = getTrainDelay(t, simTime);
+
+  // 1. Priority component
+  const cP = W.wP * (t.priority / 4.0);
+
+  // 2. Waiting urgency component
+  const cW = W.wW * Math.min(1.0, waited / 40.0);
+
+  // 3. Delay mitigation component
+  const cD = W.wD * Math.min(1.0, curDelay / 30.0);
+
+  // 4. Route completion proximity (clear network throughput)
+  const totalSecs = t.route.length - 1;
+  const completionRatio = totalSecs > 0 ? (t.sectionsCompleted + 1) / totalSecs : 1.0;
+  const cT = W.wT * completionRatio;
+
+  // 5. Downstream Look-Ahead (2-3 steps ahead)
+  let downstreamScore = 0.7;
+  const exitSt = sec.from === curStation(t) ? sec.to : sec.from;
+  let downstreamReason = 'Neutral downstream corridor';
+
+  if(t.stationIdx + 2 < t.route.length){
+    const nextSt = t.route[t.stationIdx + 2];
+    const nextSec = getSectionBetween(exitSt, nextSt, net);
+    if(nextSec){
+      if(nextSec.blocked){
+        downstreamScore = 0.05;
+        downstreamReason = `Downstream ${nextSec.id} is BLOCKED`;
+      } else {
+        const occCount = (nextSec.occupiedTrains||[]).length;
+        const qLen = (state.sectionQueues[nextSec.id]||[]).length;
+        if(occCount === 0 && qLen === 0){
+          downstreamScore = 1.0;
+          downstreamReason = `Clear downstream path through ${nextSec.id}`;
+        } else if(occCount < nextSec.capacity && qLen <= 1){
+          downstreamScore = 0.8;
+          downstreamReason = `Downstream ${nextSec.id} has spare capacity`;
+        } else {
+          const occupier = state.trains.find(x => (nextSec.occupiedTrains||[]).includes(x.id));
+          const etaFree = occupier ? Math.max(0, occupier.entryTime + nextSec.travelTime - simTime) : nextSec.travelTime;
+          if(etaFree > sec.travelTime){
+            downstreamScore = Math.max(0.1, 0.7 - ((etaFree - sec.travelTime)/25));
+            downstreamReason = `Downstream ${nextSec.id} congested (~${etaFree.toFixed(0)}m wait)`;
+          } else {
+            downstreamScore = 0.75;
+            downstreamReason = `Downstream ${nextSec.id} frees before arrival`;
+          }
+        }
+      }
+    }
+  } else {
+    downstreamScore = 1.0;
+    downstreamReason = 'Approaching terminal destination';
+  }
+  const cC = W.wC * downstreamScore;
+
+  // 6. Anti-Starvation / Fairness component
+  let fairScore = 0.4;
+  if(waited > 25){
+    fairScore = Math.min(1.0, 0.4 + (waited - 25) / 15);
+  }
+  const cF = W.wF * fairScore;
+
+  const totalScore = cP + cW + cD + cT + cC + cF;
+
+  return {
+    score: totalScore,
+    contrib: {
+      priority: cP,
+      wait: cW,
+      delay: cD,
+      completion: cT,
+      downstream: cC,
+      fairness: cF
+    },
+    downstreamReason,
+    waited,
+    curDelay
+  };
+}
+
+function resolveQueues(state){
+  const net = state.net;
+  for(const secId of Object.keys(net.sections)){
+    const queue = state.sectionQueues[secId];
+    if(!queue.length) continue;
+    const sec = net.sections[secId];
+
+    if(sec.occupiedTrains.length >= sec.capacity) continue;
+    if(sec.blocked){
+      queue.forEach(t=>{ if(t.status==='WAITING') t.status='BLOCKED'; });
+      continue;
+    }
+
+    let winner = null;
+    let explanation = null;
+
+    if(queue.length === 1){
+      winner = queue.shift();
+      addLog(state,'DISPATCH',`DISPATCH → ${winner.id} enters ${secId} (Clear track, no contention)`,winner.id,secId);
+      state.dispatchHistory.push({
+        time: state.simTime, section: secId, winnerId: winner.id, type: 'single', candidates:[winner.id]
+      });
+    } else {
+      const requesters = queue.map(t=>t.id);
+      let confType = 'Single-Track Capacity Conflict';
+      if(sec.bottleneck) confType = 'Bottleneck Contention';
+      else if(sec.from==='G'||sec.to==='G'||sec.from==='B'||sec.to==='B'||sec.from==='C'||sec.to==='C') confType = 'Junction Conflict';
+
+      if(state.ctrlType === 'baseline'){
+        const scored = queue.map(t=>({t, score: traditionalScore(t, state.simTime)}));
+        scored.sort((a,b)=>b.score - a.score);
+        winner = scored[0].t;
+        queue.splice(queue.indexOf(winner), 1);
+
+        const conflictEv = {
+          id: `CONF_${++state.conflictSeq}`,
+          time: state.simTime,
+          section: secId,
+          type: confType,
+          requesters,
+          winner: winner.id,
+          ctrl: 'baseline',
+          scores: scored.map(s=>({id:s.t.id, score: s.score.toFixed(3)}))
+        };
+        state.conflicts.push(conflictEv);
+        state.dispatchHistory.push({
+          time: state.simTime, section: secId, winnerId: winner.id, type: 'conflict', candidates: requesters
+        });
+        addLog(state,'CONFLICT',`[${conflictEv.id}] ${confType} on ${secId}: [${requesters.join(', ')}] → Dispatched ${winner.id} (Greedy Priority+Wait score)`,winner.id,secId);
+      } else {
+        const evals = queue.map(t=>({t, ...proposedEvaluate(t, secId, state)}));
+        evals.sort((a,b)=>b.score - a.score);
+        winner = evals[0].t;
+        queue.splice(queue.indexOf(winner), 1);
+
+        const rejected = evals.slice(1).map(e=>({
+          id: e.t.id,
+          score: e.score.toFixed(3),
+          reason: e.downstreamReason || 'Lower composite multi-objective score'
+        }));
+
+        explanation = {
+          section: secId,
+          winnerId: winner.id,
+          winnerScore: evals[0].score.toFixed(3),
+          contrib: evals[0].contrib,
+          downstreamReason: evals[0].downstreamReason,
+          waited: evals[0].waited,
+          rejected,
+          time: state.simTime
+        };
+        state.decisionLog.push(explanation);
+
+        const conflictEv = {
+          id: `CONF_${++state.conflictSeq}`,
+          time: state.simTime,
+          section: secId,
+          type: confType,
+          requesters,
+          winner: winner.id,
+          ctrl: 'proposed',
+          explanation
+        };
+        state.conflicts.push(conflictEv);
+        state.dispatchHistory.push({
+          time: state.simTime, section: secId, winnerId: winner.id, type: 'conflict', candidates: requesters
+        });
+
+        addLog(state,'CONFLICT',`[${conflictEv.id}] ${confType} on ${secId}: [${requesters.join(', ')}] → Dispatched ${winner.id} (Multi-Obj Score: ${evals[0].score.toFixed(3)})`,winner.id,secId);
+        addLog(state,'DECISION',`Decision on ${secId}: ${winner.id} selected | ${evals[0].downstreamReason} | Alt: ${rejected.map(r=>r.id+'='+r.score).join(', ')}`,winner.id,secId);
+        if(state===globalState) renderDecisionPanel(explanation);
+      }
+      addLog(state,'DISPATCH',`DISPATCH → ${winner.id} enters ${secId}`,winner.id,secId);
+      if(state===globalState) showConflictPop(secId, requesters, winner.id);
+    }
+
+    if(winner.waitingSince !== null){
+      winner.waitTotal += Math.max(0, state.simTime - winner.waitingSince);
+      winner.waitingSince = null;
+    }
+    if(winner.actualDeparture === null){
+      winner.actualDeparture = state.simTime;
+    }
+    winner.status = 'MOVING';
+    winner.currentSection = secId;
+    winner.entryTime = state.simTime;
+    sec.occupiedTrains.push(winner.id);
+    state.sectionBusyTime[secId] += sec.travelTime;
+
+    addLog(state,'MOVE',`${winner.id} MOVING on ${secId} (${sec.travelTime}m travel) → heading to ${nxtStation(winner)}`,winner.id,secId);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  TICK & METRICS ENGINE
+// ════════════════════════════════════════════════════════════
+function stepSim(state){
+  if(state.done) return;
+  applyDisruption(state);
+  spawnTrains(state);
+  updateMoving(state);
+  resolveQueues(state);
+
+  // Time-series timeline snapshot every 5 minutes
+  if(state.simTime % 5 === 0 || state.simTime >= state.duration){
+    const m = computeMetrics(state);
+    state.timeline.push({
+      t: state.simTime,
+      completed: m.completed,
+      fleetProgress: m.fleetProgress,
+      remainingWork: m.totalRemainingWork,
+      avgWait: m.avgWait,
+      avgDelay: m.avgDelay,
+      conflicts: m.conflicts
+    });
+  }
+
+  state.simTime += 1;
+  state.step++;
+  if(state.simTime >= state.duration) {
+    state.done = true;
+    state.trains.forEach(t=>{
+      if((t.status==='WAITING'||t.status==='BLOCKED') && t.waitingSince!==null){
+        t.waitTotal += (state.duration - t.waitingSince);
+        t.waitingSince = null;
+      }
+    });
+  }
+}
+
+function runToCompletion(state){
+  while(!state.done) stepSim(state);
+}
+
+function computeMetrics(state){
+  const hr = state.duration / 60.0;
+  const completedTrains = state.trains.filter(t => t.status==='COMPLETED');
+  const spawnedTrains = state.trains.filter(t => t.status!=='SCHEDULED');
+  const completed = completedTrains.length;
+  const throughput = hr > 0 ? completed / hr : 0;
+
+  // Actual Delay: mean arrival delay among COMPLETED trains only!
+  const avgDelay = completed > 0
+    ? completedTrains.reduce((s,t) => s + Math.max(0, t.actualArrival - t.scheduledArrival), 0) / completed
+    : 0;
+  const totalDelay = completedTrains.reduce((s,t) => s + Math.max(0, t.actualArrival - t.scheduledArrival), 0);
+
+  // Waiting Time: accumulated queued time
+  const totalWait = spawnedTrains.reduce((s,t) => s + getTrainWait(t, state.simTime), 0);
+  const avgWait = spawnedTrains.length > 0 ? totalWait / spawnedTrains.length : 0;
+
+  // On-time percentage (strictly among completed trains!)
+  const onTimeCount = completedTrains.filter(t => (t.actualArrival - t.scheduledArrival) <= 5).length;
+  const onTimePct = completed > 0 ? (onTimeCount / completed * 100) : 0;
+
+  // Fleet Progress & Remaining Journey Work Metrics
+  const fleet = computeFleetMetrics(state);
+
+  // Time-based section capacity utilization
+  const utils = {};
+  for(const sid of Object.keys(state.net.sections)){
+    const sec = state.net.sections[sid];
+    const availableCapTime = state.duration * (sec.type==='double' ? 2 : 1);
+    utils[sid] = Math.min(1.0, (state.sectionBusyTime[sid] || 0) / availableCapTime);
+  }
+  const utilValues = Object.values(utils);
+  const avgUtil = utilValues.reduce((a,b)=>a+b,0) / utilValues.length;
+  const peakUtil = Math.max(0, ...utilValues);
+  const bottleneckUtil = utils['S2'] || 0;
+
+  // Jain's Fairness Index on service ratio s_i = nominalDuration / (nominalDuration + waitTotal)
+  const serviceRatios = spawnedTrains.map(t => {
+    const w = getTrainWait(t, state.simTime);
+    return t.nominalDuration / (t.nominalDuration + w);
+  });
+  const sumS = serviceRatios.reduce((a,b)=>a+b,0);
+  const sumS2 = serviceRatios.reduce((a,b)=>a+b*b,0);
+  const jain = (serviceRatios.length>0 && sumS2>0) ? (sumS*sumS) / (serviceRatios.length * sumS2) : 1.0;
+
+  return {
+    throughput,
+    completed,
+    total: state.trains.length,
+    unfinished: fleet.unfinishedCount,
+    fleetProgress: fleet.fleetProgress,
+    totalRemainingWork: fleet.totalRemainingWork,
+    meanRemainingJourney: fleet.meanRemainingJourney,
+    effectiveCompletion: fleet.effectiveCompletion,
+    progressBins: fleet.progressBins,
+    avgDelay,
+    totalDelay,
+    avgWait,
+    totalWait,
+    conflicts: state.conflicts.length,
+    utils,
+    avgUtil,
+    peakUtil,
+    bottleneckUtil,
+    onTimeCount,
+    onTimePct,
+    jain: Math.min(1.0, Math.max(0.1, jain))
+  };
+}
+
+// ════════════════════════════════════════════════════════════
+//  CANVAS RENDERING & INTERACTION
+// ════════════════════════════════════════════════════════════
+const netCanvas = document.getElementById('netCanvas');
+const ctx = netCanvas.getContext('2d');
+let animTick = 0;
+let logicalW = 800, logicalH = 520;
+
+function resizeCanvas(){
+  const rect = netCanvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  netCanvas.width = rect.width * dpr;
+  netCanvas.height = 520 * dpr;
+  netCanvas.style.height = '520px';
+  ctx.scale(dpr, dpr);
+  logicalW = rect.width;
+  logicalH = 520;
+}
+window.addEventListener('resize',()=>{ resizeCanvas(); drawNetwork(globalState); });
+
+function stationPos(key){
+  const s = NET_DEF.stations[key];
+  return {x: s.x/800 * logicalW, y: s.y};
+}
+
+function drawNetwork(state){
+  animTick++;
+  ctx.clearRect(0,0,logicalW,logicalH);
+
+  // Background
+  ctx.fillStyle = '#080c14';
+  ctx.fillRect(0,0,logicalW,logicalH);
+
+  // Grid dots
+  ctx.fillStyle = 'rgba(30,45,69,0.45)';
+  for(let x=20; x<logicalW; x+=40){
+    for(let y=20; y<logicalH; y+=40){
+      ctx.beginPath(); ctx.arc(x,y,1,0,Math.PI*2); ctx.fill();
+    }
+  }
+
+  const net = state ? state.net : NET_DEF;
+
+  // Draw Sections
+  for(const sid of Object.keys(net.sections)){
+    const sec = net.sections[sid];
+    const p1 = stationPos(sec.from), p2 = stationPos(sec.to);
+    const occCount = (sec.occupiedTrains||[]).length;
+    const isOccupied = occCount > 0;
+    const isBlocked = sec.blocked;
+    const qLen = state ? (state.sectionQueues[sid]||[]).length : 0;
+    const isCongested = qLen >= 2;
+
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#101726';
+    ctx.lineWidth = sec.type==='double' ? 12 : 9;
+    ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+
+    let trackColor = '#1c283f';
+    if(isBlocked) trackColor = '#3d1414';
+    else if(isOccupied) trackColor = '#1e3357';
+    else if(isCongested) trackColor = '#362b14';
+    ctx.strokeStyle = trackColor;
+    ctx.lineWidth = sec.type==='double' ? 8 : 6;
+    ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+
+    if(isBlocked){
+      ctx.strokeStyle = '#f05b5b'; ctx.lineWidth = 2.5; ctx.setLineDash([6,4]);
+    } else if(isOccupied){
+      const pulse = 0.7 + 0.3*Math.sin(animTick*0.15);
+      ctx.strokeStyle = `rgba(91,138,240,${pulse})`; ctx.lineWidth = 2.5; ctx.setLineDash([]);
+    } else if(isCongested){
+      ctx.strokeStyle = '#f0a83d'; ctx.lineWidth = 2; ctx.setLineDash([5,5]);
+    } else {
+      ctx.strokeStyle = '#243350'; ctx.lineWidth = 1; ctx.setLineDash([8,8]);
+    }
+    ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+    ctx.setLineDash([]);
+
+    const mx = (p1.x+p2.x)/2, my = (p1.y+p2.y)/2;
+    const dx = p2.x-p1.x, dy = p2.y-p1.y;
+    const len = Math.sqrt(dx*dx+dy*dy);
+    const nx = -dy/len, ny = dx/len;
+    const offs = sec.type==='double' ? 14 : 11;
+    const lx = mx + nx*offs, ly = my + ny*offs;
+
+    ctx.fillStyle = isOccupied ? '#93c5fd' : isCongested ? '#fde68a' : isBlocked ? '#fca5a5' : '#64748b';
+    ctx.font = 'bold 10.5px Inter, Segoe UI'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(sid, lx, ly);
+
+    ctx.font = '8.5px Inter, Segoe UI'; ctx.fillStyle = '#475569';
+    ctx.fillText(`${sec.travelTime}m`, lx, ly+11);
+
+    if(sec.bottleneck){
+      ctx.font = '8px Inter, Segoe UI'; ctx.fillStyle = '#f0a83d';
+      ctx.fillText(sec.label || 'BTL', lx, ly+21);
+    }
+    if(isBlocked){
+      ctx.font = 'bold 8.5px Inter, Segoe UI'; ctx.fillStyle = '#f05b5b';
+      ctx.fillText('BLOCKED', lx, ly+21);
+    }
+    if(qLen > 0 && !isOccupied){
+      ctx.font = 'bold 8.5px Inter, Segoe UI'; ctx.fillStyle = '#f0a83d';
+      ctx.fillText(`Q:${qLen}`, lx, ly+21);
+    }
+  }
+
+  // Draw Trains
+  if(state){
+    for(const t of state.trains){
+      if(t.status!=='MOVING' || !t.currentSection) continue;
+      const sec = state.net.sections[t.currentSection];
+      if(!sec) continue;
+      const p1 = stationPos(sec.from), p2 = stationPos(sec.to);
+      const fwd = t.route[t.stationIdx] === sec.from;
+      const elapsed = state.simTime - t.entryTime;
+      const prog = Math.min(0.96, Math.max(0.04, elapsed / sec.travelTime));
+      const pp = fwd ? prog : (1 - prog);
+      const tx = p1.x + (p2.x - p1.x)*pp;
+      const ty = p1.y + (p2.y - p1.y)*pp;
+      const col = T_COL[t.type] || '#5b8af0';
+
+      ctx.save();
+      ctx.shadowColor = col; ctx.shadowBlur = 12;
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(tx, ty, 9, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 7px Inter, Segoe UI';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(t.id.substring(0,6), tx, ty);
+
+      const ang = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+      const spd = fwd ? 1 : -1;
+      ctx.strokeStyle = col + '90'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(tx, ty);
+      ctx.lineTo(tx - Math.cos(ang)*spd*14, ty - Math.sin(ang)*spd*14);
+      ctx.stroke();
+    }
+  }
+
+  // Draw Stations
+  for(const [key, sta] of Object.entries(NET_DEF.stations)){
+    const p = stationPos(key);
+    const r = sta.central ? 26 : sta.junction ? 22 : 18;
+    const isJunction = sta.junction || sta.central;
+    const waitingTrains = state ? state.trains.filter(t=>(t.status==='WAITING'||t.status==='BLOCKED') && curStation(t)===key) : [];
+    const wCount = waitingTrains.length;
+
+    ctx.save();
+    if(sta.central){ ctx.shadowColor = '#5b8af0'; ctx.shadowBlur = 16; }
+    else if(isJunction){ ctx.shadowColor = '#1e3357'; ctx.shadowBlur = 10; }
+    ctx.fillStyle = sta.central ? '#162044' : sta.terminus ? '#18182e' : '#101726';
+    ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    ctx.strokeStyle = sta.central ? '#5b8af0' : sta.terminus ? '#4a5b99' : isJunction ? '#243b66' : '#1e2d45';
+    ctx.lineWidth = sta.central ? 2.5 : sta.terminus ? 2 : 1.5;
+    ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2); ctx.stroke();
+
+    ctx.fillStyle = '#e2e8f0'; ctx.font = `bold ${sta.central?14:12}px Inter, Segoe UI`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(key, p.x, p.y);
+
+    const lOff = (key==='I'||key==='J'||key==='F') ? r+14 : -(r+14);
+    ctx.fillStyle = '#64748b'; ctx.font = '9px Inter, Segoe UI'; ctx.textAlign = 'center';
+    ctx.fillText(sta.name, p.x, p.y+lOff+(lOff>0?0:-4));
+    if(sta.central) ctx.fillText('⬟ Central Junction', p.x, p.y+lOff+(lOff>0?12:+4));
+
+    if(wCount > 0){
+      ctx.fillStyle = '#f0a83d';
+      ctx.beginPath(); ctx.arc(p.x+r-4, p.y-r+4, 9, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#080c14'; ctx.font = 'bold 9px Inter, Segoe UI';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(wCount, p.x+r-4, p.y-r+4);
+    }
+  }
+
+  // Disruption Banner
+  if(state && state.disruption){
+    const {section,from,to} = state.disruption;
+    if(state.simTime>=from && state.simTime<to){
+      const sec = NET_DEF.sections[section];
+      if(sec){
+        const p1 = stationPos(sec.from), p2 = stationPos(sec.to);
+        const mx = (p1.x+p2.x)/2, my = (p1.y+p2.y)/2;
+        const pulse = 0.5 + 0.5*Math.sin(animTick*0.2);
+        ctx.fillStyle = `rgba(240,91,91,${0.85+pulse*0.15})`;
+        ctx.font = 'bold 11px Inter, Segoe UI'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(`⚠ ${section} BLOCKED (t=${from}–${to}m)`, mx, my-22);
+      }
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  INTERACTIVE CLICK INSPECTION ON CANVAS
+// ════════════════════════════════════════════════════════════
+netCanvas.addEventListener('click', (e)=>{
+  const rect = netCanvas.getBoundingClientRect();
+  const clickX = e.clientX - rect.left;
+  const clickY = e.clientY - rect.top;
+  const state = globalState;
+  if(!state) return;
+
+  for(const [key, sta] of Object.entries(NET_DEF.stations)){
+    const p = stationPos(key);
+    const dist = Math.hypot(clickX - p.x, clickY - p.y);
+    if(dist <= 26){
+      const waiting = state.trains.filter(t=>(t.status==='WAITING'||t.status==='BLOCKED') && curStation(t)===key);
+      showModal(`Station ${key} — ${sta.name}`, `
+        <div style="margin-bottom:6px"><b>Type:</b> ${sta.central?'Central Junction':sta.junction?'Junction':'Terminus'}</div>
+        <div style="margin-bottom:6px"><b>Waiting Trains (${waiting.length}):</b></div>
+        ${waiting.length ? waiting.map(t=>`<div>• <b>${t.id}</b> (${t.type}): Route Progress: ${(getTrainProgress(t,state.simTime,state.net)*100).toFixed(0)}%, Wait ${getTrainWait(t,state.simTime).toFixed(0)}m, Delay +${getTrainDelay(t,state.simTime).toFixed(0)}m</div>`).join('') : '<div style="color:var(--muted)">No trains waiting</div>'}
+      `);
+      return;
+    }
+  }
+
+  for(const [sid, sec] of Object.entries(state.net.sections)){
+    const p1 = stationPos(sec.from), p2 = stationPos(sec.to);
+    const d = distToSegment({x:clickX, y:clickY}, p1, p2);
+    if(d <= 14){
+      const q = state.sectionQueues[sid] || [];
+      const occ = sec.occupiedTrains || [];
+      const busy = state.sectionBusyTime[sid] || 0;
+      const capTime = state.duration * (sec.type==='double'?2:1);
+      const util = ((busy/capTime)*100).toFixed(1);
+      const confCount = state.conflicts.filter(c=>c.section===sid).length;
+
+      showModal(`Section ${sid}: ${sec.from} ↔ ${sec.to}`, `
+        <div><b>Track Type:</b> ${sec.type} (Capacity: ${sec.capacity})</div>
+        <div><b>Nominal Travel Time:</b> ${sec.travelTime} minutes</div>
+        <div><b>Status:</b> ${sec.blocked ? '<span style="color:var(--red)">BLOCKED</span>' : occ.length ? '<span style="color:var(--accent)">Occupied</span>' : '<span style="color:var(--green)">Free</span>'}</div>
+        <div><b>Occupants (${occ.length}):</b> ${occ.join(', ') || 'None'}</div>
+        <div><b>Queued (${q.length}):</b> ${q.map(t=>t.id).join(', ') || 'None'}</div>
+        <div><b>Capacity Utilization:</b> ${util}%</div>
+        <div><b>Conflicts:</b> ${confCount}</div>
+      `);
+      return;
+    }
+  }
+
+  closeModal();
+});
+
+function distToSegment(p, v, w){
+  const l2 = (w.x - v.x)**2 + (w.y - v.y)**2;
+  if(l2 === 0) return Math.hypot(p.x - v.x, p.y - v.y);
+  let t = ((p.x - v.x)*(w.x - v.x) + (p.y - v.y)*(w.y - v.y)) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x - (v.x + t*(w.x - v.x)), p.y - (v.y + t*(w.y - v.y)));
+}
+
+function showModal(title, html){
+  const m = document.getElementById('infoModal');
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = html;
+  m.classList.add('active');
+}
+function closeModal(){
+  document.getElementById('infoModal').classList.remove('active');
+}
+
+// ════════════════════════════════════════════════════════════
+//  CANVAS CHARTS (TIME-SERIES CURVES & BAR CHARTS)
+// ════════════════════════════════════════════════════════════
+let utilChartMode = 'avg';
+function toggleUtilChart(mode){
+  utilChartMode = mode;
+  document.getElementById('btnUtilAvg').classList.toggle('act', mode==='avg');
+  document.getElementById('btnUtilPeak').classList.toggle('act', mode==='peak');
+  if(globalState) updateSimCharts(globalState);
+}
+
+function drawLineChart(canvasId, seriesA, seriesB, timePoints, opts = {}){
+  const c = document.getElementById(canvasId);
+  if(!c) return;
+  const ctx2 = c.getContext('2d');
+  const W = c.parentElement.clientWidth - 4;
+  const H = opts.height || 180;
+  c.width = W; c.height = H;
+  ctx2.clearRect(0,0,W,H);
+
+  if(!seriesA || !seriesA.length){
+    ctx2.fillStyle = '#64748b'; ctx2.font = '11px Inter'; ctx2.textAlign = 'center'; ctx2.textBaseline = 'middle';
+    ctx2.fillText('No time-series data available', W/2, H/2);
+    return;
+  }
+
+  const pad = {l: 44, r: 16, t: 28, b: 30};
+  const maxVal = Math.max(...seriesA, ...(seriesB || []), 0.1);
+  const maxT = timePoints[timePoints.length - 1] || 180;
+
+  for(let i = 0; i <= 4; i++){
+    const y = pad.t + (H - pad.t - pad.b) * (1 - i / 4);
+    ctx2.strokeStyle = 'rgba(30,45,69,0.7)'; ctx2.lineWidth = 1;
+    ctx2.setLineDash([3, 3]);
+    ctx2.beginPath(); ctx2.moveTo(pad.l, y); ctx2.lineTo(W - pad.r, y); ctx2.stroke();
+    ctx2.setLineDash([]);
+    ctx2.fillStyle = '#64748b'; ctx2.font = '9px Inter'; ctx2.textAlign = 'right'; ctx2.textBaseline = 'middle';
+    ctx2.fillText((maxVal * i / 4).toFixed(opts.decimals !== undefined ? opts.decimals : (maxVal < 10 ? 1 : 0)), pad.l - 6, y);
+  }
+
+  const numTicks = 6;
+  for(let i = 0; i <= numTicks; i++){
+    const tVal = (maxT * i / numTicks);
+    const x = pad.l + (W - pad.l - pad.r) * (i / numTicks);
+    ctx2.fillStyle = '#64748b'; ctx2.font = '9px Inter'; ctx2.textAlign = 'center'; ctx2.textBaseline = 'top';
+    ctx2.fillText(Math.round(tVal) + 'm', x, H - pad.b + 5);
+  }
+
+  function plotSeries(data, color, isDashed = false){
+    ctx2.strokeStyle = color;
+    ctx2.lineWidth = 2.2;
+    if(isDashed) ctx2.setLineDash([5, 4]);
+    else ctx2.setLineDash([]);
+    ctx2.beginPath();
+    data.forEach((val, idx)=>{
+      const t = timePoints[idx] || 0;
+      const x = pad.l + (W - pad.l - pad.r) * (t / maxT);
+      const y = pad.t + (H - pad.t - pad.b) * (1 - val / maxVal);
+      if(idx === 0) ctx2.moveTo(x, y);
+      else ctx2.lineTo(x, y);
+    });
+    ctx2.stroke();
+    ctx2.setLineDash([]);
+
+    data.forEach((val, idx)=>{
+      const t = timePoints[idx] || 0;
+      const x = pad.l + (W - pad.l - pad.r) * (t / maxT);
+      const y = pad.t + (H - pad.t - pad.b) * (1 - val / maxVal);
+      ctx2.fillStyle = color;
+      ctx2.beginPath(); ctx2.arc(x, y, 3, 0, Math.PI * 2); ctx2.fill();
+    });
+  }
+
+  if(seriesA) plotSeries(seriesA, opts.colorA || '#64748b', true);
+  if(seriesB) plotSeries(seriesB, opts.colorB || '#5b8af0', false);
+
+  ctx2.font = '10px Inter'; ctx2.textAlign = 'left'; ctx2.textBaseline = 'middle';
+  if(opts.legendA){
+    ctx2.strokeStyle = opts.colorA || '#64748b'; ctx2.lineWidth = 2; ctx2.setLineDash([4,3]);
+    ctx2.beginPath(); ctx2.moveTo(pad.l + 10, 12); ctx2.lineTo(pad.l + 28, 12); ctx2.stroke();
+    ctx2.setLineDash([]);
+    ctx2.fillStyle = '#94a3b8'; ctx2.fillText(opts.legendA, pad.l + 34, 12);
+  }
+  if(opts.legendB){
+    const off = pad.l + 150;
+    ctx2.strokeStyle = opts.colorB || '#5b8af0'; ctx2.lineWidth = 2.2;
+    ctx2.beginPath(); ctx2.moveTo(off, 12); ctx2.lineTo(off + 18, 12); ctx2.stroke();
+    ctx2.fillStyle = '#94a3b8'; ctx2.fillText(opts.legendB, off + 24, 12);
+  }
+}
+
+function drawGroupedBarChart(canvasId, categories, seriesA, seriesB, legendA, legendB, opts = {}){
+  const c = document.getElementById(canvasId);
+  if(!c) return;
+  const ctx2 = c.getContext('2d');
+  const W = c.parentElement.clientWidth - 4;
+  const H = opts.height || 180;
+  c.width = W; c.height = H;
+  ctx2.clearRect(0,0,W,H);
+
+  const pad = {l: 36, r: 16, t: 28, b: 30};
+  const maxVal = Math.max(...seriesA, ...seriesB, 1);
+  const nGroups = categories.length;
+  const groupW = (W - pad.l - pad.r) / nGroups;
+  const bW = Math.max(10, Math.floor(groupW / 2) - 4);
+
+  for(let i = 0; i <= 4; i++){
+    const y = pad.t + (H - pad.t - pad.b) * (1 - i / 4);
+    ctx2.strokeStyle = 'rgba(30,45,69,0.7)'; ctx2.lineWidth = 1;
+    ctx2.setLineDash([3, 3]);
+    ctx2.beginPath(); ctx2.moveTo(pad.l, y); ctx2.lineTo(W - pad.r, y); ctx2.stroke();
+    ctx2.setLineDash([]);
+    ctx2.fillStyle = '#64748b'; ctx2.font = '9px Inter'; ctx2.textAlign = 'right'; ctx2.textBaseline = 'middle';
+    ctx2.fillText(Math.round(maxVal * i / 4), pad.l - 5, y);
+  }
+
+  categories.forEach((cat, idx)=>{
+    const gx = pad.l + idx * groupW;
+    const vA = seriesA[idx] || 0;
+    const vB = seriesB[idx] || 0;
+
+    const hA = Math.max(2, (vA / maxVal) * (H - pad.t - pad.b));
+    const hB = Math.max(2, (vB / maxVal) * (H - pad.t - pad.b));
+
+    const bxA = gx + groupW / 2 - bW - 2;
+    const bxB = gx + groupW / 2 + 2;
+
+    const byA = H - pad.b - hA;
+    const byB = H - pad.b - hB;
+
+    ctx2.fillStyle = opts.colorA || '#64748b';
+    ctx2.fillRect(bxA, byA, bW, hA);
+    ctx2.fillStyle = '#fff'; ctx2.font = 'bold 8.5px Inter'; ctx2.textAlign = 'center'; ctx2.textBaseline = 'bottom';
+    if(vA > 0) ctx2.fillText(vA, bxA + bW / 2, byA - 2);
+
+    ctx2.fillStyle = opts.colorB || '#5b8af0';
+    ctx2.fillRect(bxB, byB, bW, hB);
+    ctx2.fillStyle = '#93c5fd';
+    if(vB > 0) ctx2.fillText(vB, bxB + bW / 2, byB - 2);
+
+    ctx2.fillStyle = '#94a3b8'; ctx2.font = '9px Inter'; ctx2.textAlign = 'center'; ctx2.textBaseline = 'top';
+    ctx2.fillText(cat, gx + groupW / 2, H - pad.b + 6);
+  });
+
+  ctx2.font = '10px Inter'; ctx2.textAlign = 'left'; ctx2.textBaseline = 'middle';
+  ctx2.fillStyle = opts.colorA || '#64748b'; ctx2.fillRect(pad.l + 10, 8, 10, 10);
+  ctx2.fillStyle = '#94a3b8'; ctx2.fillText(legendA, pad.l + 25, 13);
+  ctx2.fillStyle = opts.colorB || '#5b8af0'; ctx2.fillRect(pad.l + 130, 8, 10, 10);
+  ctx2.fillStyle = '#94a3b8'; ctx2.fillText(legendB, pad.l + 145, 13);
+}
+
+function drawBarChart(canvasId, labels, values, colors, opts={}){
+  const c = document.getElementById(canvasId);
+  if(!c) return;
+  const ctx2 = c.getContext('2d');
+  const W = c.parentElement.clientWidth - 4;
+  const H = opts.height || 140;
+  c.width = W; c.height = H;
+  ctx2.clearRect(0,0,W,H);
+
+  if(!values.length){
+    ctx2.fillStyle = '#64748b'; ctx2.font = '11px Inter'; ctx2.textAlign = 'center'; ctx2.textBaseline = 'middle';
+    ctx2.fillText('No data available', W/2, H/2);
+    return;
+  }
+
+  const pad = {l:36, r:10, t:18, b:28};
+  const maxV = Math.max(...values, 0.01);
+  const bArea = W - pad.l - pad.r;
+  const bW = Math.max(8, Math.floor(bArea / labels.length) - 4);
+  const step = bArea / labels.length;
+
+  for(let i=0; i<=4; i++){
+    const y = pad.t + (H - pad.t - pad.b)*(1 - i/4);
+    ctx2.strokeStyle = 'rgba(30,45,69,0.7)'; ctx2.lineWidth = 1;
+    ctx2.setLineDash([3,3]);
+    ctx2.beginPath(); ctx2.moveTo(pad.l, y); ctx2.lineTo(W - pad.r, y); ctx2.stroke();
+    ctx2.setLineDash([]);
+    ctx2.fillStyle = '#475569'; ctx2.font = '9px Inter'; ctx2.textAlign = 'right'; ctx2.textBaseline = 'middle';
+    ctx2.fillText((maxV*i/4).toFixed(maxV<10?1:0), pad.l-4, y);
+  }
+
+  labels.forEach((l, i)=>{
+    const v = values[i];
+    const bh = Math.max(2, (v / maxV)*(H - pad.t - pad.b));
+    const bx = pad.l + i*step + step/2 - bW/2;
+    const by = H - pad.b - bh;
+    const col = Array.isArray(colors) ? colors[i % colors.length] : colors;
+
+    ctx2.fillStyle = col;
+    ctx2.beginPath();
+    if(ctx2.roundRect) ctx2.roundRect(bx, by, bW, bh, 3);
+    else ctx2.rect(bx, by, bW, bh);
+    ctx2.fill();
+
+    if(bh > 12){
+      ctx2.fillStyle = '#fff'; ctx2.font = 'bold 8.5px Inter'; ctx2.textAlign = 'center'; ctx2.textBaseline = 'top';
+      ctx2.fillText(v.toFixed(v<10?1:0), bx + bW/2, by + 2);
+    }
+
+    ctx2.fillStyle = '#64748b'; ctx2.font = '8.5px Inter'; ctx2.textAlign = 'center'; ctx2.textBaseline = 'top';
+    const shortL = l.length > 7 ? l.substring(0,6)+'…' : l;
+    ctx2.fillText(shortL, bx + bW/2, H - pad.b + 3);
+  });
+}
+
+function updateSimCharts(state){
+  const m = computeMetrics(state);
+  const secIds = Object.keys(m.utils);
+  const vals = secIds.map(s => {
+    if(utilChartMode==='peak') return (state.net.sections[s].occupiedTrains.length > 0 ? 100 : 0);
+    return m.utils[s]*100;
+  });
+  const cols = secIds.map(s => state.net.sections[s].bottleneck ? '#f0a83d' : '#5b8af0');
+  drawBarChart('utilChart', secIds, vals, cols, {height:130});
+
+  // Time-series live progress chart
+  const timeline = state.timeline || [];
+  if(timeline.length > 1){
+    const tPoints = timeline.map(x=>x.t);
+    const compVals = timeline.map(x=>x.completed);
+    const progVals = timeline.map(x=>x.fleetProgress);
+    drawLineChart('liveProgChart', compVals, progVals, tPoints, {
+      height: 130, colorA: '#2dd4a0', colorB: '#5b8af0',
+      legendA: 'Completed Trains', legendB: 'Fleet Progress (%)', decimals: 0
+    });
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  HEATMAP RENDERING
+// ════════════════════════════════════════════════════════════
+function drawHeatmap(state){
+  const c = document.getElementById('heatmapCanvas');
+  if(!c) return;
+  const ctx2 = c.getContext('2d');
+  const stationKeys = Object.keys(NET_DEF.stations);
+  const windows = [];
+  for(let w=0; w*30 < state.duration; w++) windows.push(w*30);
+
+  const W = c.parentElement.clientWidth - 32;
+  const cellH = 26, headerH = 34, leftW = 85;
+  const cellW = Math.max(46, Math.floor((W - leftW) / windows.length));
+  const H = headerH + stationKeys.length * cellH + 6;
+  c.width = W; c.height = H;
+  ctx2.clearRect(0,0,W,H);
+
+  ctx2.fillStyle = '#64748b'; ctx2.font = 'bold 9.5px Inter'; ctx2.textAlign = 'center'; ctx2.textBaseline = 'middle';
+  windows.forEach((w, wi)=>{
+    ctx2.fillText(`${w}–${w+30}m`, leftW + wi*cellW + cellW/2, headerH/2);
+  });
+
+  stationKeys.forEach((sk, si)=>{
+    const y = headerH + si*cellH;
+    ctx2.fillStyle = '#94a3b8'; ctx2.font = 'bold 10px Inter'; ctx2.textAlign = 'right'; ctx2.textBaseline = 'middle';
+    ctx2.fillText(NET_DEF.stations[sk].name, leftW - 8, y + cellH/2);
+
+    windows.forEach((w, wi)=>{
+      const cell = state.heatmapData[sk]?.[w];
+      const hasData = cell && cell.count > 0;
+      const avg = hasData ? (cell.total / cell.count) : 0;
+
+      let bg = '#141c2e';
+      let textColor = '#475569';
+      let text = 'N/A';
+
+      if(hasData){
+        text = avg.toFixed(1) + 'm';
+        textColor = '#fff';
+        if(avg <= 3) bg = '#10b981';
+        else if(avg <= 7) bg = '#0284c7';
+        else if(avg <= 12) bg = '#d97706';
+        else if(avg <= 20) bg = '#ea580c';
+        else bg = '#dc2626';
+      }
+
+      ctx2.fillStyle = bg;
+      ctx2.fillRect(leftW + wi*cellW, y, cellW-2, cellH-2);
+
+      ctx2.fillStyle = textColor; ctx2.font = 'bold 9px Inter'; ctx2.textAlign = 'center'; ctx2.textBaseline = 'middle';
+      ctx2.fillText(text, leftW + wi*cellW + (cellW-2)/2, y + (cellH-2)/2);
+    });
+  });
+}
+
+function renderBottlenecks(state){
+  const m = computeMetrics(state);
+  const ranked = Object.entries(m.utils).map(([sid, u])=>{
+    const qLen = (state.sectionQueues[sid]||[]).length;
+    const conf = state.conflicts.filter(c=>c.section===sid).length;
+    const waiting = state.trains.filter(t=>t.status==='WAITING' && (state.sectionQueues[sid]||[]).find(x=>x.id===t.id));
+    const avgWait = waiting.length ? waiting.reduce((s,t)=>s+getTrainWait(t,state.simTime),0)/waiting.length : 0;
+    const congestionIdx = u*0.4 + Math.min(1, qLen/4)*0.25 + Math.min(1, conf/8)*0.25 + Math.min(1, avgWait/20)*0.1;
+    return {sid, u, qLen, conf, avgWait, congestionIdx};
+  });
+
+  ranked.sort((a,b)=>b.congestionIdx - a.congestionIdx);
+
+  const el = document.getElementById('bottleneckList');
+  if(!el) return;
+  el.innerHTML = ranked.slice(0, 8).map(item=>{
+    const sec = NET_DEF.sections[item.sid];
+    const pct = (item.u*100).toFixed(1);
+    const col = item.u > 0.75 ? '#f05b5b' : item.u > 0.45 ? '#f0a83d' : '#2dd4a0';
+    return `<div class="bn-item">
+      <div class="bn-top">
+        <span class="bn-name">${item.sid}: ${sec.from}→${sec.to} <span style="font-size:9px;color:${sec.bottleneck?'#f0a83d':'#64748b'}">${sec.bottleneck?sec.label||'BOTTLENECK':sec.type}</span></span>
+        <span class="bn-util" style="color:${col}">Cap Util: ${pct}%</span>
+      </div>
+      <div class="bn-bar-bg"><div class="bn-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+      <div class="bn-stats">
+        <span>Travel: ${sec.travelTime}m</span>
+        <span>Queue: ${item.qLen}</span>
+        <span>Conflicts: ${item.conf}</span>
+        <span>Avg Wait: ${item.avgWait.toFixed(1)}m</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderConflictAnalysis(state){
+  const el = document.getElementById('conflictAnalysisContent');
+  if(!el) return;
+  const types = {};
+  state.conflicts.forEach(c=>{ types[c.type] = (types[c.type]||0) + 1; });
+  const secCounts = {};
+  state.conflicts.forEach(c=>{ secCounts[c.section] = (secCounts[c.section]||0) + 1; });
+
+  const typeHTML = Object.entries(types).map(([k,v])=>`
+    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(30,45,69,0.5);font-size:11px">
+      <span>${k}</span><b>${v}</b>
+    </div>
+  `).join('') || '<div style="color:var(--muted);font-size:11px">No conflicts recorded</div>';
+
+  const secHTML = Object.entries(secCounts).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([s,cnt])=>`
+    <span style="background:var(--surf2);padding:2px 8px;border-radius:4px;border:1px solid var(--border);font-size:10.5px"><b>${s}:</b> ${cnt}</span>
+  `).join(' ');
+
+  el.innerHTML = `
+    <div style="margin-bottom:10px">
+      <div style="font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;margin-bottom:4px">By Conflict Category</div>
+      ${typeHTML}
+    </div>
+    <div>
+      <div style="font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;margin-bottom:6px">Most Contested Sections</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${secHTML || '<span style="color:var(--muted);font-size:11px">None</span>'}</div>
+    </div>
+  `;
+}
+
+function renderTrainTypeAnalysis(state){
+  const el = document.getElementById('trainTypeAnalysisContent');
+  if(!el) return;
+  const typeMap = {EXPRESS:[], PASSENGER:[], FREIGHT:[], REGIONAL:[]};
+  state.trains.forEach(t=>{ if(typeMap[t.type]) typeMap[t.type].push(t); });
+
+  const rows = Object.entries(typeMap).map(([type, list])=>{
+    const comp = list.filter(t=>t.status==='COMPLETED');
+    const avgDelay = comp.length ? comp.reduce((s,t)=>s+Math.max(0,t.actualArrival-t.scheduledArrival),0)/comp.length : 0;
+    const avgWait = list.length ? list.reduce((s,t)=>s+getTrainWait(t,state.simTime),0)/list.length : 0;
+    const avgProg = list.length ? list.reduce((s,t)=>s+getTrainProgress(t,state.simTime,state.net),0)/list.length*100 : 0;
+    const onTime = comp.length ? (comp.filter(t=>(t.actualArrival-t.scheduledArrival)<=5).length / comp.length * 100).toFixed(0)+'%' : '—';
+    return `<tr>
+      <td><span class="type-badge tb-${type.substring(0,3)}">${type}</span></td>
+      <td>${comp.length}/${list.length}</td>
+      <td>${avgProg.toFixed(1)}%</td>
+      <td>+${avgDelay.toFixed(1)}m</td>
+      <td>${avgWait.toFixed(1)}m</td>
+      <td>${onTime}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <table class="ttable" style="font-size:11.5px">
+      <thead><tr><th>Class</th><th>Completed</th><th>Fleet Progress</th><th>Avg Delay (Comp)</th><th>Avg Wait</th><th>On-Time (Comp)</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function renderAnalysisTable(state){
+  const tb = document.getElementById('analysisTbody');
+  if(!tb) return;
+  const rows = state.trains.map(t=>{
+    const st = `<span class="type-badge tb-${t.type.substring(0,3)}">${t.type}</span>`;
+    const sp = `<span class="status-pill sp-${t.status}"><span class="sdot"></span>${t.status}</span>`;
+    const route = t.route.join('→');
+    const delay = getTrainDelay(t, state.simTime);
+    const wait = getTrainWait(t, state.simTime);
+    const prog = getTrainProgress(t, state.simTime, state.net);
+    const rem = getTrainRemainingWork(t, state.simTime, state.net);
+    return `<tr>
+      <td><b>${t.id}</b></td><td>${st}</td>
+      <td style="font-size:10px;color:#64748b">${route}</td>
+      <td>${sp}</td>
+      <td><b>${(prog*100).toFixed(0)}%</b></td>
+      <td>${rem.toFixed(0)}m</td>
+      <td>${t.scheduledDeparture}m</td>
+      <td>${t.actualDeparture!==null?t.actualDeparture+'m':'—'}</td>
+      <td>${t.scheduledArrival}m</td>
+      <td>${t.actualArrival!==null?t.actualArrival+'m':'—'}</td>
+      <td style="color:${delay>5?'#f05b5b':'inherit'}">${delay>0?'+'+delay.toFixed(0)+'m':'0m'}</td>
+      <td>${wait.toFixed(0)}m</td>
+      <td>${t.priority}</td>
+    </tr>`;
+  }).join('');
+  tb.innerHTML = rows;
+}
+
+// ════════════════════════════════════════════════════════════
+//  EVENT LOG & DECISION EXPLANATIONS
+// ════════════════════════════════════════════════════════════
+let logFilter = 'ALL';
+let allLogs = [];
+
+const TAG_CFG = {
+  CONFLICT:  {tag:'CONFLICT',cls:'lt-CONFLICT',rowCls:'le-CONFLICT'},
+  DISPATCH:  {tag:'DISPATCH',cls:'lt-DISPATCH',rowCls:'le-DISPATCH'},
+  SPAWN:     {tag:'SPAWN',   cls:'lt-SPAWN',   rowCls:''},
+  MOVE:      {tag:'MOVE',    cls:'lt-MOVE',    rowCls:''},
+  DONE:      {tag:'DONE',    cls:'lt-DONE',    rowCls:'le-DONE'},
+  FREE:      {tag:'FREE',    cls:'lt-FREE',    rowCls:''},
+  DECISION:  {tag:'DECISION',cls:'lt-DECISION',rowCls:''},
+  DISRUPTION:{tag:'DISRUPT', cls:'lt-DISRUPTION',rowCls:'le-DISRUPTION'},
+};
+
+function renderLogEntry(ev){
+  allLogs.push(ev);
+  if(logFilter!=='ALL' && ev.type!==logFilter) return;
+  const wrap = document.getElementById('logWrap');
+  const div = document.createElement('div');
+  const cfg = TAG_CFG[ev.type] || {tag:ev.type,cls:'lt-SPAWN',rowCls:''};
+  div.className = `log-entry ${cfg.rowCls}`;
+  div.innerHTML = `<span class="log-time">${Math.round(ev.time)}m</span>
+    <span class="log-tag ${cfg.cls}">${cfg.tag}</span>
+    <span>${ev.msg}</span>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  const cnt = document.getElementById('logCount');
+  if(cnt) cnt.textContent = `${allLogs.length} events`;
+}
+
+function setLogFilter(type, btn){
+  logFilter = type;
+  document.querySelectorAll('.log-filter-btn').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  const wrap = document.getElementById('logWrap');
+  wrap.innerHTML = '';
+  const filtered = type==='ALL' ? allLogs : allLogs.filter(e=>e.type===type);
+  filtered.forEach(e=>{
+    const cfg = TAG_CFG[e.type] || {tag:e.type,cls:'lt-SPAWN',rowCls:''};
+    const div = document.createElement('div');
+    div.className = `log-entry ${cfg.rowCls}`;
+    div.innerHTML = `<span class="log-time">${Math.round(e.time)}m</span>
+      <span class="log-tag ${cfg.cls}">${cfg.tag}</span>
+      <span>${e.msg}</span>`;
+    wrap.appendChild(div);
+  });
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function clearLog(){
+  allLogs = [];
+  document.getElementById('logWrap').innerHTML = '';
+  document.getElementById('logCount').textContent = '';
+}
+
+let popTimer = null;
+function showConflictPop(sec, reqs, winner){
+  const el = document.getElementById('conflictPop');
+  el.textContent = `⚡ CONFLICT on ${sec}\n[${reqs.join(', ')}]\n→ Selected: ${winner}`;
+  el.classList.add('show');
+  if(popTimer) clearTimeout(popTimer);
+  popTimer = setTimeout(()=>el.classList.remove('show'), 2600);
+}
+
+function renderDecisionPanel(exp){
+  const panel = document.getElementById('decisionPanel');
+  panel.classList.add('show');
+  const content = document.getElementById('dpContent');
+  const c = exp.contrib;
+  const contribHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:10.5px;margin-top:6px">
+      <div>Priority: <b style="color:var(--cyan)">+${c.priority.toFixed(2)}</b></div>
+      <div>Downstream: <b style="color:var(--cyan)">+${c.downstream.toFixed(2)}</b></div>
+      <div>Completion: <b style="color:var(--cyan)">+${c.completion.toFixed(2)}</b></div>
+      <div>Wait Urgency: <b style="color:var(--cyan)">+${c.wait.toFixed(2)}</b></div>
+      <div>Delay Red.: <b style="color:var(--cyan)">+${c.delay.toFixed(2)}</b></div>
+      <div>Fairness: <b style="color:var(--cyan)">+${c.fairness.toFixed(2)}</b></div>
+    </div>
+  `;
+  const rejHTML = exp.rejected.map(r=>`
+    <div style="margin-bottom:6px">
+      <div class="dp-rejected">✗ ${r.id} (Score: ${r.score})</div>
+      <div class="dp-rej-reason">${r.reason}</div>
+    </div>
+  `).join('');
+
+  content.innerHTML = `
+    <div class="dp-box">
+      <div class="dp-box-title">Selected Train</div>
+      <div class="dp-winner">✓ ${exp.winnerId} (Total Score: ${exp.winnerScore})</div>
+      <div style="font-size:11px;color:var(--muted2);margin-top:2px">${exp.downstreamReason}</div>
+      ${contribHTML}
+      <div style="margin-top:8px;font-size:9.5px;color:var(--muted)">Section ${exp.section} · Time: ${exp.time} min</div>
+    </div>
+    <div class="dp-box">
+      <div class="dp-box-title">Rejected Alternatives</div>
+      ${rejHTML || '<div class="dp-rej-reason">No competing trains</div>'}
+    </div>
+  `;
+}
+
+// ════════════════════════════════════════════════════════════
+//  LIVE UI UPDATERS & STATE AT HORIZON CARD
+// ════════════════════════════════════════════════════════════
+function updateTrainTable(state){
+  const tbody = document.getElementById('trainTbody');
+  if(!tbody) return;
+  const rows = state.trains.map(t=>{
+    const sp = `<span class="status-pill sp-${t.status}"><span class="sdot"></span>${t.status}</span>`;
+    const tb = `<span class="type-badge tb-${t.type.substring(0,3)}">${t.type.substring(0,3)}</span>`;
+    const delay = getTrainDelay(t, state.simTime);
+    const wait = getTrainWait(t, state.simTime);
+    const prog = getTrainProgress(t, state.simTime, state.net);
+    const rem = getTrainRemainingWork(t, state.simTime, state.net);
+    return `<tr>
+      <td><b style="color:${T_COL[t.type]}">${t.id}</b></td>
+      <td>${tb}</td>
+      <td style="font-size:10px;color:#64748b">${t.origin}→${t.destination}</td>
+      <td>${sp}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:4px">
+          <div style="width:36px;height:4px;background:var(--surf3);border-radius:2px;overflow:hidden">
+            <div style="width:${(prog*100).toFixed(0)}%;height:100%;background:var(--accent)"></div>
+          </div>
+          <b>${(prog*100).toFixed(0)}%</b>
+        </div>
+      </td>
+      <td>${rem.toFixed(0)}m</td>
+      <td>${wait.toFixed(0)}m</td>
+      <td style="color:${delay>5?'#f05b5b':'inherit'}">${t.status==='COMPLETED'?(delay>0?'+'+delay.toFixed(0)+'m':'0m'):(delay>0?'(+'+delay.toFixed(0)+'m)':'—')}</td>
+      <td>${t.scheduledArrival}m</td>
+      <td>${t.actualArrival!==null?t.actualArrival+'m':'—'}</td>
+    </tr>`;
+  }).join('');
+  tbody.innerHTML = rows;
+  document.getElementById('trainCountLabel').textContent = `${state.trains.length} trains`;
+
+  const m = computeMetrics(state);
+  document.getElementById('onTimeBadge').textContent = `Fleet Progress: ${m.fleetProgress.toFixed(1)}% | Rem. Work: ${m.totalRemainingWork.toFixed(0)}m`;
+}
+
+function updateKPI(state){
+  const m = computeMetrics(state);
+  document.getElementById('kFleetProg').textContent = m.fleetProgress.toFixed(1) + '%';
+  document.getElementById('kRemWork').textContent = m.totalRemainingWork.toFixed(0) + ' m';
+  document.getElementById('kMeanRemSub').textContent = `Mean: ${m.meanRemainingJourney.toFixed(1)} m/unfin`;
+  document.getElementById('kThru').textContent = m.throughput.toFixed(2);
+  document.getElementById('kEffCompSub').textContent = `Completed: ${m.completed}/${m.total} (Eff: ${m.effectiveCompletion.toFixed(1)})`;
+  document.getElementById('kDelay').textContent = m.completed > 0 ? m.avgDelay.toFixed(1) + ' m' : 'N/A';
+  document.getElementById('kWait').textContent = m.avgWait.toFixed(1) + ' m';
+  document.getElementById('kTotWaitSub').textContent = `Total: ${m.totalWait.toFixed(0)} min`;
+  document.getElementById('kConflicts').textContent = m.conflicts;
+  document.getElementById('kOnTime').textContent = m.completed > 0 ? m.onTimePct.toFixed(1) + '%' : 'N/A';
+  document.getElementById('kFair').textContent = m.jain.toFixed(2);
+  document.getElementById('kUtilSub').textContent = `Peak Util: ${(m.peakUtil*100).toFixed(1)}%`;
+
+  // Update State at Horizon Banner
+  if(state.done){
+    const hCard = document.getElementById('horizonStateCard');
+    hCard.classList.add('show');
+    document.getElementById('hcFleetProg').textContent = m.fleetProgress.toFixed(1) + '%';
+    document.getElementById('hcRemWork').textContent = m.totalRemainingWork.toFixed(0) + ' min';
+    document.getElementById('hcMeanRem').textContent = m.meanRemainingJourney.toFixed(1) + ' min';
+    document.getElementById('hcEffComp').textContent = `${m.effectiveCompletion.toFixed(1)} / ${m.total}`;
+    document.getElementById('hcComp').textContent = `${m.completed} / ${m.total}`;
+    document.getElementById('hcThru').textContent = `${m.throughput.toFixed(2)} t/hr`;
+    document.getElementById('hcWait').textContent = `${m.totalWait.toFixed(0)} min`;
+  } else {
+    document.getElementById('horizonStateCard').classList.remove('show');
+  }
+}
+
+function updateControlBar(state){
+  const dispTime = Math.min(Math.round(state.simTime), state.duration);
+  const pct = Math.min(100, (dispTime / state.duration * 100)).toFixed(0);
+  document.getElementById('cbTime').textContent = `${dispTime} / ${state.duration} min`;
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('simProgress').querySelector('.pt').textContent = `Time: ${dispTime} min`;
+
+  const m = computeMetrics(state);
+  document.getElementById('cbSummaryText').textContent = `${m.completed} / ${m.total} Completed · ${m.fleetProgress.toFixed(1)}% Fleet Progress`;
+
+  const tag = document.getElementById('cbStatusTag');
+  if(state.done){
+    if(m.completed === state.trains.length){
+      tag.className = 'status-tag st-completed';
+      tag.textContent = 'All Trains Completed';
+    } else {
+      tag.className = 'status-tag st-horizon';
+      tag.textContent = 'Horizon Reached';
+    }
+  } else if(state.trains.some(t=>t.status==='MOVING')){
+    tag.className = 'status-tag st-running';
+    tag.textContent = 'Running';
+  } else {
+    tag.className = 'status-tag st-idle';
+    tag.textContent = 'Queued / Waiting';
+  }
+}
+
+function updateWeights(){
+  const W = getWeights();
+  document.getElementById('wPv').textContent = W.wP.toFixed(2);
+  document.getElementById('wWv').textContent = W.wW.toFixed(2);
+  document.getElementById('wDv').textContent = W.wD.toFixed(2);
+  document.getElementById('wTv').textContent = W.wT.toFixed(2);
+  document.getElementById('wCv').textContent = W.wC.toFixed(2);
+  document.getElementById('wFv').textContent = W.wF.toFixed(2);
+}
+
+function resetWeights(){
+  document.getElementById('wP').value = 4;
+  document.getElementById('wW').value = 3;
+  document.getElementById('wD').value = 3;
+  document.getElementById('wT').value = 4;
+  document.getElementById('wC').value = 3;
+  document.getElementById('wF').value = 3;
+  updateWeights();
+}
+
+// ════════════════════════════════════════════════════════════
+//  SIMULATION RUNNER & CONTROLS
+// ════════════════════════════════════════════════════════════
+let globalState = null;
+let animTimer = null;
+let simSpeed = 200;
+let paused = false;
+
+function getSeed(){ return parseInt(document.getElementById('seedInput').value)||42; }
+
+function startSim(){
+  if(animTimer){ clearInterval(animTimer); animTimer = null; }
+  clearLog();
+  paused = false;
+  document.getElementById('pauseBtn').textContent = '⏸ Pause';
+  document.getElementById('horizonStateCard').classList.remove('show');
+  closeModal();
+
+  const scenario = document.getElementById('scenarioSel').value;
+  const ctrl = document.getElementById('ctrlSel').value;
+  const seed = getSeed();
+  const scenDef = SCENARIOS[scenario];
+
+  document.getElementById('cbScenario').textContent = scenDef.name;
+  document.getElementById('cbCtrl').textContent = ctrl==='proposed' ? 'Proposed Multi-Objective' : 'Traditional Greedy';
+
+  globalState = makeSimState(scenario, ctrl, seed);
+  document.getElementById('compareGroup').style.display = 'none';
+  document.getElementById('decisionPanel').classList.remove('show');
+
+  renderLogEntry({time:0,type:'SPAWN',msg:`▶ Initialized: ${scenDef.name} | Controller: ${ctrl==='proposed'?'Proposed Multi-Objective':'Traditional Greedy'} | ${globalState.trains.length} trains | Seed: ${seed}`});
+
+  resizeCanvas();
+  drawNetwork(globalState);
+  updateTrainTable(globalState);
+  updateKPI(globalState);
+  updateControlBar(globalState);
+
+  animTimer = setInterval(()=>tick(globalState), simSpeed);
+}
+
+function tick(state){
+  if(!state || state.done){
+    clearInterval(animTimer); animTimer = null;
+    if(state){
+      drawNetwork(state);
+      updateTrainTable(state);
+      updateKPI(state);
+      updateControlBar(state);
+      updateSimCharts(state);
+      document.getElementById('compareGroup').style.display = 'block';
+      const m = computeMetrics(state);
+      renderLogEntry({
+        time: state.simTime,
+        type: 'DONE',
+        msg: `🏁 Simulation Horizon Reached (${state.duration}m) | Fleet Progress: ${m.fleetProgress.toFixed(1)}% | Rem. Work: ${m.totalRemainingWork.toFixed(0)}m | Completed: ${m.completed}/${m.total} | Throughput: ${m.throughput.toFixed(2)} t/hr`
+      });
+    }
+    return;
+  }
+
+  stepSim(state);
+  drawNetwork(state);
+  if(state.step%3 === 0){
+    updateTrainTable(state);
+    updateControlBar(state);
+  }
+  if(state.step%8 === 0) updateKPI(state);
+  if(state.step%15 === 0) updateSimCharts(state);
+}
+
+function pauseSim(){
+  if(!globalState || globalState.done) return;
+  paused = !paused;
+  document.getElementById('pauseBtn').textContent = paused ? '▶ Resume' : '⏸ Pause';
+  if(paused){ clearInterval(animTimer); animTimer = null; }
+  else { animTimer = setInterval(()=>tick(globalState), simSpeed); }
+}
+
+function resetSim(){
+  clearInterval(animTimer); animTimer = null;
+  globalState = null; paused = false;
+  clearLog();
+  closeModal();
+  document.getElementById('pauseBtn').textContent = '⏸ Pause';
+  document.getElementById('compareGroup').style.display = 'none';
+  document.getElementById('decisionPanel').classList.remove('show');
+  document.getElementById('horizonStateCard').classList.remove('show');
+  resizeCanvas(); drawNetwork(null);
+  document.getElementById('trainTbody').innerHTML = '';
+  document.getElementById('trainCountLabel').textContent = '0 trains';
+  ['kFleetProg','kRemWork','kThru','kDelay','kWait','kConflicts','kOnTime','kFair'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.textContent='0.00';
+  });
+  document.getElementById('kFleetProg').textContent = '0.0%';
+  document.getElementById('kRemWork').textContent = '0 m';
+  document.getElementById('cbTime').textContent = '0 / — min';
+  document.getElementById('cbStatusTag').className = 'status-tag st-idle';
+  document.getElementById('cbStatusTag').textContent = 'Idle';
+  document.getElementById('cbSummaryText').textContent = '0 / 0 Completed · 0.0% Fleet Progress';
+  document.getElementById('progFill').style.width = '0%';
+}
+
+function setSpeed(ms){
+  simSpeed = ms;
+  ['spd1','spd2','spd3','spd4'].forEach(id=>document.getElementById(id).classList.remove('act'));
+  const map = {600:'spd1',200:'spd2',50:'spd3',8:'spd4'};
+  const btn = document.getElementById(map[ms]);
+  if(btn) btn.classList.add('act');
+  if(animTimer && globalState && !globalState.done && !paused){
+    clearInterval(animTimer);
+    animTimer = setInterval(()=>tick(globalState), simSpeed);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  COMPARISON LOGIC (RUN BOTH ON IDENTICAL INITIAL SNAPSHOT)
+// ════════════════════════════════════════════════════════════
+let cmpResults = null;
+
+function runBoth(){
+  const scenario = document.getElementById('scenarioSel').value;
+  const seed = getSeed();
+  clearInterval(animTimer); animTimer = null;
+
+  const scenDef = SCENARIOS[scenario];
+  const masterTrains = scenDef.gen(seed);
+
+  const stBaseline = makeSimState(scenario, 'baseline', seed, masterTrains);
+  runToCompletion(stBaseline);
+
+  const stProposed = makeSimState(scenario, 'proposed', seed, masterTrains);
+  runToCompletion(stProposed);
+
+  cmpResults = {baseline: stBaseline, proposed: stProposed, scenario, seed};
+  globalState = stProposed;
+
+  resizeCanvas(); drawNetwork(globalState);
+  updateTrainTable(globalState);
+  updateKPI(globalState);
+  updateSimCharts(globalState);
+  updateControlBar(globalState);
+
+  renderCompareTab();
+  switchTab('compare');
+}
+
+function runCompare(){
+  if(!globalState) return;
+  const scenario = globalState.scenarioKey;
+  const seed = globalState.seed;
+  const masterTrains = SCENARIOS[scenario].gen(seed);
+
+  const stBl = makeSimState(scenario, 'baseline', seed, masterTrains);
+  const stPr = makeSimState(scenario, 'proposed', seed, masterTrains);
+  runToCompletion(stBl);
+  runToCompletion(stPr);
+
+  cmpResults = {baseline: stBl, proposed: stPr, scenario, seed};
+  renderCompareTab();
+  switchTab('compare');
+}
+
+function analyzeDecisionDifferences(stBl, stPr){
+  const blHist = stBl.dispatchHistory || [];
+  const prHist = stPr.dispatchHistory || [];
+  const totalBl = blHist.length;
+  const totalPr = prHist.length;
+
+  let diffCount = 0;
+  const secDiffs = {};
+  const sampleDiffs = [];
+
+  blHist.forEach(b => {
+    if(b.type === 'conflict'){
+      const p = prHist.find(x => x.section === b.section && Math.abs(x.time - b.time) <= 4);
+      if(p && p.winnerId !== b.winnerId){
+        diffCount++;
+        secDiffs[b.section] = (secDiffs[b.section] || 0) + 1;
+        if(sampleDiffs.length < 4){
+          sampleDiffs.push({
+            time: b.time,
+            section: b.section,
+            tradWinner: b.winnerId,
+            propWinner: p.winnerId,
+            candidates: b.candidates
+          });
+        }
+      }
+    }
+  });
+
+  return { totalBl, totalPr, diffCount, secDiffs, sampleDiffs };
+}
+
+function renderCompareTab(){
+  if(!cmpResults) return;
+  document.getElementById('compareEmpty').style.display = 'none';
+  document.getElementById('compareContent').style.display = 'block';
+
+  const {baseline, proposed, scenario, seed} = cmpResults;
+  const mBl = computeMetrics(baseline);
+  const mPr = computeMetrics(proposed);
+  const scenDef = SCENARIOS[scenario];
+
+  document.getElementById('cmpSubtitle').textContent =
+    `Scenario: ${scenDef.name} | Simulation Horizon: ${scenDef.duration} min | Random Seed: ${seed} | Fleet: ${baseline.trains.length} trains`;
+
+  // Categorized Metrics Table
+  const fleetMetrics = [
+    {name:'Fleet Progress (%)',             bl:mBl.fleetProgress,       pr:mPr.fleetProgress,       unit:'%', higherBetter:true,  fmt:v=>v.toFixed(1)+'%'},
+    {name:'Remaining Journey Work (min)',   bl:mBl.totalRemainingWork,  pr:mPr.totalRemainingWork,  unit:'',  higherBetter:false, fmt:v=>v.toFixed(0)+' min'},
+    {name:'Mean Remaining Journey (min)',   bl:mBl.meanRemainingJourney,pr:mPr.meanRemainingJourney,unit:'',  higherBetter:false, fmt:v=>v.toFixed(1)+' min'},
+    {name:'Effective Completion Equivalent',bl:mBl.effectiveCompletion, pr:mPr.effectiveCompletion, unit:'',  higherBetter:true,  fmt:v=>`${v.toFixed(1)} / ${baseline.trains.length}`},
+    {name:'Unfinished Trains Count',        bl:mBl.unfinished,          pr:mPr.unfinished,          unit:'',  higherBetter:false, fmt:v=>v.toString()},
+    {name:'Total Waiting Time (min)',       bl:mBl.totalWait,           pr:mPr.totalWait,           unit:'',  higherBetter:false, fmt:v=>v.toFixed(0)+' min'},
+    {name:'Average Waiting Time (min)',     bl:mBl.avgWait,             pr:mPr.avgWait,             unit:'',  higherBetter:false, fmt:v=>v.toFixed(1)+' min'},
+  ];
+
+  const operationalMetrics = [
+    {name:'Completed Trains',               bl:mBl.completed,           pr:mPr.completed,           unit:'',  higherBetter:true,  fmt:v=>`${v} / ${baseline.trains.length}`},
+    {name:'Completed-Train Throughput',     bl:mBl.throughput,          pr:mPr.throughput,          unit:'',  higherBetter:true,  fmt:v=>v.toFixed(2)+' t/hr'},
+    {name:'Average Arrival Delay (Comp.)',  bl:mBl.avgDelay,            pr:mPr.avgDelay,            unit:'',  higherBetter:false, fmt:v=>mBl.completed>0?v.toFixed(1)+' min':'N/A'},
+    {name:'On-Time Arrivals (Comp.)',       bl:mBl.onTimePct,           pr:mPr.onTimePct,           unit:'%', higherBetter:true,  fmt:v=>mBl.completed>0?v.toFixed(1)+'%':'N/A'},
+    {name:'Total Conflicts Detected',       bl:mBl.conflicts,           pr:mPr.conflicts,           unit:'',  higherBetter:false, fmt:v=>v.toString()},
+    {name:'Average Section Utilization',    bl:mBl.avgUtil*100,         pr:mPr.avgUtil*100,         unit:'%', higherBetter:true,  fmt:v=>v.toFixed(1)+'%'},
+    {name:'Peak Section Utilization',       bl:mBl.peakUtil*100,        pr:mPr.peakUtil*100,        unit:'%', higherBetter:false, fmt:v=>v.toFixed(1)+'%'},
+    {name:"Jain's Fairness Index",          bl:mBl.jain,                pr:mPr.jain,                unit:'',  higherBetter:true,  fmt:v=>v.toFixed(3)},
+  ];
+
+  function renderGroup(title, list){
+    let html = `<tr style="background:var(--surf3)"><td colspan="5" style="font-weight:800;color:var(--cyan);font-size:10.5px;letter-spacing:0.8px">${title}</td></tr>`;
+    html += list.map(m=>{
+      const diff = m.pr - m.bl;
+      const relDiff = m.bl > 0 ? (diff / m.bl * 100) : 0;
+      const same = Math.abs(diff) < 0.001;
+      const isAdvantage = m.higherBetter ? (m.pr > m.bl) : (m.pr < m.bl);
+      const badgeCls = same ? 'cmp-neu' : (isAdvantage ? 'cmp-pos' : 'cmp-neg');
+      const sign = diff > 0 ? '+' : '';
+      return `<tr>
+        <td><b>${m.name}</b></td>
+        <td class="cmp-bl">${m.fmt(m.bl)}</td>
+        <td class="cmp-pr">${m.fmt(m.pr)}</td>
+        <td>${same ? '0.00' : sign + diff.toFixed(2)}</td>
+        <td><span class="cmp-change ${badgeCls}">${same ? '0.0%' : sign + relDiff.toFixed(1) + '%'}</span></td>
+      </tr>`;
+    }).join('');
+    return html;
+  }
+
+  const tbody = document.getElementById('cmpTbody');
+  tbody.innerHTML = renderGroup('1. FLEET STATE AT SIMULATION HORIZON (ENTIRE FLEET PROGRESS & WORK)', fleetMetrics) +
+                    renderGroup('2. OPERATIONAL & COMPLETION PERFORMANCE (COMPLETED TRAINS & NETWORK)', operationalMetrics);
+
+  // 6 Reorganized Comparison Charts
+  const chartsGrid = document.getElementById('cmpChartsGrid');
+  chartsGrid.innerHTML = [
+    {id:'cc1', title:'Cumulative Completed Trains (Time-Series)'},
+    {id:'cc2', title:'Cumulative Fleet Progress (%) (Time-Series)'},
+    {id:'cc3', title:'Route Progress Distribution (0–100%)'},
+    {id:'cc4', title:'Remaining Journey Work (min)'},
+    {id:'cc5', title:'Average Arrival Delay — Completed (min)'},
+    {id:'cc6', title:'Total Conflicts Detected'},
+  ].map(ch=>`<div class="cmp-chart-card"><h4>${ch.title}</h4><canvas class="cmp-ch" id="${ch.id}" height="160"></canvas></div>`).join('');
+
+  setTimeout(()=>{
+    // 1. Cumulative Completed Trains Time Series
+    const tlBl = baseline.timeline || [];
+    const tlPr = proposed.timeline || [];
+    const tPoints = tlPr.map(x=>x.t);
+    const compBl = tlBl.map(x=>x.completed);
+    const compPr = tlPr.map(x=>x.completed);
+    drawLineChart('cc1', compBl, compPr, tPoints, {
+      height: 160, colorA: '#64748b', colorB: '#5b8af0', legendA: 'Traditional', legendB: 'Proposed', decimals: 0
+    });
+
+    // 2. Cumulative Fleet Progress Time Series
+    const progBl = tlBl.map(x=>x.fleetProgress);
+    const progPr = tlPr.map(x=>x.fleetProgress);
+    drawLineChart('cc2', progBl, progPr, tPoints, {
+      height: 160, colorA: '#64748b', colorB: '#5b8af0', legendA: 'Traditional (%)', legendB: 'Proposed (%)', decimals: 1
+    });
+
+    // 3. Route Progress Distribution Grouped Bars
+    const bins = ['0–25%', '25–50%', '50–75%', '75–99%', '100%'];
+    drawGroupedBarChart('cc3', bins, mBl.progressBins, mPr.progressBins, 'Traditional', 'Proposed', {height: 160});
+
+    // 4. Remaining Journey Work
+    drawBarChart('cc4', ['Traditional', 'Proposed'], [mBl.totalRemainingWork, mPr.totalRemainingWork], ['#64748b', '#f0a83d'], {height: 160});
+
+    // 5. Average Arrival Delay
+    drawBarChart('cc5', ['Traditional', 'Proposed'], [mBl.avgDelay, mPr.avgDelay], ['#64748b', '#f05b5b'], {height: 160});
+
+    // 6. Conflicts
+    drawBarChart('cc6', ['Traditional', 'Proposed'], [mBl.conflicts, mPr.conflicts], ['#64748b', '#38bdf8'], {height: 160});
+  }, 40);
+
+  // Performance Trade-Offs Panel (Objective & Neutral)
+  const tradeOffs = [
+    {name: 'Fleet Progress', adv: mPr.fleetProgress > mBl.fleetProgress, diff: `${(mPr.fleetProgress - mBl.fleetProgress).toFixed(1)}%`},
+    {name: 'Remaining Work', adv: mPr.totalRemainingWork < mBl.totalRemainingWork, diff: `${(mPr.totalRemainingWork - mBl.totalRemainingWork).toFixed(0)} min`},
+    {name: 'Completed Trains', adv: mPr.completed > mBl.completed, diff: `${mPr.completed - mBl.completed > 0 ? '+' : ''}${mPr.completed - mBl.completed}`},
+    {name: 'Arrival Delay (Comp.)', adv: mPr.avgDelay < mBl.avgDelay, diff: `${(mPr.avgDelay - mBl.avgDelay).toFixed(1)} min`},
+    {name: 'Waiting Time', adv: mPr.avgWait < mBl.avgWait, diff: `${(mPr.avgWait - mBl.avgWait).toFixed(1)} min`},
+    {name: 'Conflicts', adv: mPr.conflicts < mBl.conflicts, diff: `${mPr.conflicts - mBl.conflicts}`},
+    {name: 'Effective Completion', adv: mPr.effectiveCompletion > mBl.effectiveCompletion, diff: `+${(mPr.effectiveCompletion - mBl.effectiveCompletion).toFixed(1)} eq`},
+    {name: 'Service Fairness', adv: mPr.jain > mBl.jain, diff: `${(mPr.jain - mBl.jain).toFixed(3)}`}
+  ];
+
+  document.getElementById('tradeoffGrid').innerHTML = tradeOffs.map(t=>{
+    const badge = t.adv ? `<span class="cmp-change cmp-pos">Proposed Advantage (${t.diff})</span>` :
+                          `<span class="cmp-change cmp-neg">Traditional Advantage (${t.diff})</span>`;
+    return `<div class="tradeoff-item">
+      <div style="font-size:10px;font-weight:700;color:var(--text2);margin-bottom:4px">${t.name}</div>
+      ${badge}
+    </div>`;
+  }).join('');
+
+  // Data-Driven Decision Divergence Analysis ("Why the Results Differed")
+  const diffs = analyzeDecisionDifferences(baseline, proposed);
+  const secTags = Object.entries(diffs.secDiffs).map(([s,c])=>`<b>${s}:</b> ${c} divergent dispatches`).join(', ');
+
+  document.getElementById('decisionDiffContent').innerHTML = `
+    <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap">
+      <div style="background:var(--surf2);padding:10px 14px;border-radius:6px;border:1px solid var(--border)">
+        <div style="font-size:10px;color:var(--muted2);text-transform:uppercase">Total Traditional Dispatches</div>
+        <div style="font-size:16px;font-weight:800;color:var(--text)">${diffs.totalBl}</div>
+      </div>
+      <div style="background:var(--surf2);padding:10px 14px;border-radius:6px;border:1px solid var(--border)">
+        <div style="font-size:10px;color:var(--muted2);text-transform:uppercase">Total Proposed Dispatches</div>
+        <div style="font-size:16px;font-weight:800;color:var(--cyan)">${diffs.totalPr}</div>
+      </div>
+      <div style="background:var(--surf2);padding:10px 14px;border-radius:6px;border:1px solid var(--border)">
+        <div style="font-size:10px;color:var(--muted2);text-transform:uppercase">Divergent Conflict Choices</div>
+        <div style="font-size:16px;font-weight:800;color:var(--amber)">${diffs.diffCount} divergence points</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text);margin-bottom:8px"><b>Primary Sections with Decision Divergence:</b> ${secTags || 'None'}</div>
+    <div style="font-size:11px;color:var(--muted2);margin-bottom:8px"><b>Sample Divergence Points:</b></div>
+    ${diffs.sampleDiffs.map(sd=>`
+      <div style="background:var(--surf2);padding:8px 12px;border-radius:6px;margin-bottom:6px;font-size:10.5px;border:1px solid var(--border)">
+        <span style="color:var(--muted2)">t=${sd.time}m on ${sd.section}:</span>
+        Traditional dispatched <b>${sd.tradWinner}</b> (greedy priority) vs. Proposed dispatched <b style="color:var(--cyan)">${sd.propWinner}</b> (downstream corridor clearing). Competitors: [${sd.candidates.join(', ')}].
+      </div>
+    `).join('') || '<div style="font-size:10.5px;color:var(--muted)">No divergent decisions detected.</div>'}
+  `;
+
+  // Real Decision Explanations from Simulation Log
+  const decLog = proposed.decisionLog.slice(-5);
+  if(decLog.length){
+    document.getElementById('lastDecisionSection').style.display = 'block';
+    document.getElementById('lastDecisionContent').innerHTML = decLog.map(d=>`
+      <div style="background:var(--surf2);border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:4px">
+          t=${d.time}m — Section ${d.section}: Dispatched ${d.winnerId} (Multi-Objective Score: ${d.winnerScore})
+        </div>
+        <div style="font-size:11px;color:var(--text);margin-bottom:4px"><b>Rationale:</b> ${d.downstreamReason}</div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;font-size:10px;color:var(--muted2);margin-bottom:6px">
+          <span>Priority: +${d.contrib.priority.toFixed(2)}</span>
+          <span>Downstream: +${d.contrib.downstream.toFixed(2)}</span>
+          <span>Completion: +${d.contrib.completion.toFixed(2)}</span>
+          <span>Wait: +${d.contrib.wait.toFixed(2)}</span>
+          <span>Delay: +${d.contrib.delay.toFixed(2)}</span>
+          <span>Fairness: +${d.contrib.fairness.toFixed(2)}</span>
+        </div>
+        ${d.rejected.length ? `<div style="font-size:10.5px;color:var(--red)"><b>Rejected Alternatives:</b> ${d.rejected.map(r=>`${r.id} (${r.score}) — ${r.reason}`).join('; ')}</div>` : ''}
+      </div>
+    `).join('');
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  MONTE CARLO RESEARCH EXPERIMENT MODE
+// ════════════════════════════════════════════════════════════
+let batchResults = [];
+
+function runBatchExperiment(){
+  const scenario = document.getElementById('expScenarioSel').value;
+  const runs = parseInt(document.getElementById('expRunsSel').value) || 5;
+  const baseSeed = parseInt(document.getElementById('expBaseSeed').value) || 42;
+  const scenDef = SCENARIOS[scenario];
+
+  document.getElementById('expProgressBar').style.display = 'block';
+  document.getElementById('btnBatchRun').disabled = true;
+  batchResults = [];
+
+  let curRun = 0;
+  function processNextRun(){
+    if(curRun >= runs){
+      document.getElementById('expProgressBar').style.display = 'none';
+      document.getElementById('btnBatchRun').disabled = false;
+      renderBatchResults(scenario, scenDef);
+      return;
+    }
+
+    const seed = baseSeed + curRun;
+    document.getElementById('expProgressTxt').textContent = `Executing Trial ${curRun+1} of ${runs} (Seed: ${seed})...`;
+    document.getElementById('expProgressFill').style.width = ((curRun+1)/runs*100) + '%';
+
+    setTimeout(()=>{
+      const masterTrains = scenDef.gen(seed);
+      const stBl = makeSimState(scenario, 'baseline', seed, masterTrains);
+      const stPr = makeSimState(scenario, 'proposed', seed, masterTrains);
+      runToCompletion(stBl);
+      runToCompletion(stPr);
+
+      batchResults.push({
+        trial: curRun+1,
+        seed,
+        baseline: computeMetrics(stBl),
+        proposed: computeMetrics(stPr)
+      });
+
+      curRun++;
+      processNextRun();
+    }, 20);
+  }
+
+  processNextRun();
+}
+
+function meanSD(arr){
+  const n = arr.length;
+  if(!n) return {mean:0, sd:0};
+  const m = arr.reduce((a,b)=>a+b,0) / n;
+  const v = arr.reduce((a,b)=>a + (b-m)**2, 0) / (n>1 ? n-1 : 1);
+  return {mean: m, sd: Math.sqrt(v)};
+}
+
+function renderBatchResults(scenario, scenDef){
+  document.getElementById('expResultsSection').style.display = 'block';
+  document.getElementById('expMatrixSection').style.display = 'block';
+
+  const metricsConfig = [
+    {key:'fleetProgress', name:'Fleet Progress (%)', higherBetter:true},
+    {key:'totalRemainingWork', name:'Remaining Journey Work (min)', higherBetter:false},
+    {key:'effectiveCompletion', name:'Effective Completion Equivalent', higherBetter:true},
+    {key:'completed', name:'Trains Completed', higherBetter:true},
+    {key:'throughput', name:'Throughput (trains/hr)', higherBetter:true},
+    {key:'avgDelay', name:'Average Arrival Delay — Comp. (min)', higherBetter:false},
+    {key:'onTimePct', name:'On-Time Arrivals — Comp. (%)', higherBetter:true},
+    {key:'avgWait', name:'Average Waiting Time (min)', higherBetter:false},
+    {key:'conflicts', name:'Conflicts Detected', higherBetter:false},
+    {key:'jain', name:"Jain's Fairness Index", higherBetter:true}
+  ];
+
+  const tbody = document.getElementById('expResultsTbody');
+  tbody.innerHTML = metricsConfig.map(mc=>{
+    const blVals = batchResults.map(r=>r.baseline[mc.key]);
+    const prVals = batchResults.map(r=>r.proposed[mc.key]);
+    const sBl = meanSD(blVals);
+    const sPr = meanSD(prVals);
+    const diff = sPr.mean - sBl.mean;
+    const rel = sBl.mean > 0 ? (diff / sBl.mean * 100) : 0;
+    const same = Math.abs(diff) < 0.01;
+    const isAdv = mc.higherBetter ? (sPr.mean > sBl.mean) : (sPr.mean < sBl.mean);
+    const cls = same ? 'cmp-neu' : (isAdv ? 'cmp-pos' : 'cmp-neg');
+    const dirTxt = same ? 'Neutral' : (isAdv ? 'Proposed Advantage' : 'Traditional Advantage');
+
+    return `<tr>
+      <td><b>${mc.name}</b></td>
+      <td class="cmp-bl">${sBl.mean.toFixed(2)} ± ${sBl.sd.toFixed(2)}</td>
+      <td class="cmp-pr">${sPr.mean.toFixed(2)} ± ${sPr.sd.toFixed(2)}</td>
+      <td>${diff>0?'+':''}${diff.toFixed(2)}</td>
+      <td><span class="cmp-change ${cls}">${rel>0?'+':''}${rel.toFixed(1)}%</span></td>
+      <td><b style="color:${isAdv?'var(--green)':'var(--text)'}">${dirTxt}</b></td>
+    </tr>`;
+  }).join('');
+
+  const mbody = document.getElementById('expMatrixTbody');
+  mbody.innerHTML = batchResults.map(r=>`
+    <tr>
+      <td><b>#${r.trial}</b></td>
+      <td>${r.seed}</td>
+      <td>${r.baseline.fleetProgress.toFixed(1)}%</td><td style="color:var(--cyan)">${r.proposed.fleetProgress.toFixed(1)}%</td>
+      <td>${r.baseline.totalRemainingWork.toFixed(0)}m</td><td style="color:var(--cyan)">${r.proposed.totalRemainingWork.toFixed(0)}m</td>
+      <td>${r.baseline.completed}/${r.baseline.total}</td><td style="color:var(--cyan)">${r.proposed.completed}/${r.proposed.total}</td>
+      <td>${r.baseline.avgDelay.toFixed(1)}m</td><td style="color:var(--cyan)">${r.proposed.avgDelay.toFixed(1)}m</td>
+      <td>${r.baseline.avgWait.toFixed(1)}m</td><td style="color:var(--cyan)">${r.proposed.avgWait.toFixed(1)}m</td>
+    </tr>
+  `).join('');
+}
+
+// ════════════════════════════════════════════════════════════
+//  CSV EXPORTS
+// ════════════════════════════════════════════════════════════
+function exportComparisonCSV(){
+  if(!cmpResults) return;
+  const {baseline, proposed, scenario, seed} = cmpResults;
+  const mBl = computeMetrics(baseline);
+  const mPr = computeMetrics(proposed);
+  let csv = "Scenario,Seed,Controller,Duration_min,Total_Trains,FleetProgress_Pct,RemainingWork_min,MeanRemaining_min,EffectiveCompletion,Completed_Trains,Throughput_t_hr,OnTime_Pct,AvgDelay_min,AvgWait_min,Conflicts,JainsFairness\n";
+  csv += `${scenario},${seed},Traditional,${baseline.duration},${baseline.trains.length},${mBl.fleetProgress.toFixed(1)},${mBl.totalRemainingWork.toFixed(0)},${mBl.meanRemainingJourney.toFixed(1)},${mBl.effectiveCompletion.toFixed(1)},${mBl.completed},${mBl.throughput.toFixed(2)},${mBl.onTimePct.toFixed(1)},${mBl.avgDelay.toFixed(1)},${mBl.avgWait.toFixed(1)},${mBl.conflicts},${mBl.jain.toFixed(3)}\n`;
+  csv += `${scenario},${seed},Proposed,${proposed.duration},${proposed.trains.length},${mPr.fleetProgress.toFixed(1)},${mPr.totalRemainingWork.toFixed(0)},${mPr.meanRemainingJourney.toFixed(1)},${mPr.effectiveCompletion.toFixed(1)},${mPr.completed},${mPr.throughput.toFixed(2)},${mPr.onTimePct.toFixed(1)},${mPr.avgDelay.toFixed(1)},${mPr.avgWait.toFixed(1)},${mPr.conflicts},${mPr.jain.toFixed(3)}\n`;
+  downloadCSV(`comparison_${scenario}_seed${seed}.csv`, csv);
+}
+
+function exportTrainsCSV(){
+  const state = globalState || cmpResults?.proposed;
+  if(!state) return;
+  let csv = "TrainID,Type,Priority,Origin,Destination,Status,RouteProgress_Pct,RemainingWork_min,SchedDeparture,ActDeparture,SchedArrival,ActArrival,Delay_min,Wait_min,SectionsCompleted\n";
+  state.trains.forEach(t=>{
+    const delay = getTrainDelay(t, state.simTime);
+    const wait = getTrainWait(t, state.simTime);
+    const prog = getTrainProgress(t, state.simTime, state.net);
+    const rem = getTrainRemainingWork(t, state.simTime, state.net);
+    csv += `${t.id},${t.type},${t.priority},${t.origin},${t.destination},${t.status},${(prog*100).toFixed(1)},${rem.toFixed(1)},${t.scheduledDeparture},${t.actualDeparture!==null?t.actualDeparture:''},${t.scheduledArrival},${t.actualArrival!==null?t.actualArrival:''},${delay.toFixed(1)},${wait.toFixed(1)},${t.sectionsCompleted}\n`;
+  });
+  downloadCSV(`trains_${state.scenarioKey}_${state.ctrlType}.csv`, csv);
+}
+
+function exportBatchCSV(){
+  if(!batchResults.length) return;
+  let csv = "Trial,Seed,Controller,FleetProgress_Pct,RemainingWork_min,EffectiveCompletion,Completed,Throughput_t_hr,AvgDelay_min,AvgWait_min,Conflicts,JainsIndex\n";
+  batchResults.forEach(r=>{
+    csv += `${r.trial},${r.seed},Traditional,${r.baseline.fleetProgress.toFixed(1)},${r.baseline.totalRemainingWork.toFixed(0)},${r.baseline.effectiveCompletion.toFixed(1)},${r.baseline.completed},${r.baseline.throughput.toFixed(2)},${r.baseline.avgDelay.toFixed(1)},${r.baseline.avgWait.toFixed(1)},${r.baseline.conflicts},${r.baseline.jain.toFixed(3)}\n`;
+    csv += `${r.trial},${r.seed},Proposed,${r.proposed.fleetProgress.toFixed(1)},${r.proposed.totalRemainingWork.toFixed(0)},${r.proposed.effectiveCompletion.toFixed(1)},${r.proposed.completed},${r.proposed.throughput.toFixed(2)},${r.proposed.avgDelay.toFixed(1)},${r.proposed.avgWait.toFixed(1)},${r.proposed.conflicts},${r.proposed.jain.toFixed(3)}\n`;
+  });
+  downloadCSV(`batch_experiments_${batchResults.length}_runs.csv`, csv);
+}
+
+function downloadCSV(filename, text){
+  const blob = new Blob([text], {type: 'text/csv;charset=utf-8;'});
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// ════════════════════════════════════════════════════════════
+//  TABS & NAVIGATION
+// ════════════════════════════════════════════════════════════
+function switchTab(tab){
+  ['sim','compare','analysis','experiments'].forEach(t=>{
+    const panel = document.getElementById(`panel-${t}`);
+    if(panel) panel.classList.toggle('active', t===tab);
+  });
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{
+    const tabs = ['sim','compare','analysis','experiments'];
+    b.classList.toggle('active', tabs[i]===tab);
+  });
+
+  if(tab==='analysis'){
+    const state = globalState || cmpResults?.proposed;
+    if(state){
+      document.getElementById('analysisEmpty').style.display = 'none';
+      document.getElementById('analysisContent').style.display = 'block';
+
+      // 1. Plot Curves
+      const timeline = state.timeline || [];
+      if(timeline.length > 1){
+        const tPoints = timeline.map(x=>x.t);
+        const compVals = timeline.map(x=>x.completed);
+        const progVals = timeline.map(x=>x.fleetProgress);
+        drawLineChart('analysisCurvesChart', compVals, progVals, tPoints, {
+          height: 240, colorA: '#2dd4a0', colorB: '#5b8af0',
+          legendA: 'Completed Trains', legendB: 'Fleet Progress (%)', decimals: 0
+        });
+      }
+
+      // 2. Plot Distribution
+      const m = computeMetrics(state);
+      const bins = ['0–25%', '25–50%', '50–75%', '75–99%', '100%'];
+      drawBarChart('analysisDistChart', bins, m.progressBins, '#5b8af0', {height: 240});
+
+      drawHeatmap(state);
+      renderBottlenecks(state);
+      renderConflictAnalysis(state);
+      renderTrainTypeAnalysis(state);
+      renderAnalysisTable(state);
+    }
+  }
+  if(tab==='compare' && cmpResults) renderCompareTab();
+}
+
+document.getElementById('scenarioSel').addEventListener('change', function(){
+  document.getElementById('cbScenario').textContent = SCENARIOS[this.value]?.name || this.value;
+});
+document.getElementById('ctrlSel').addEventListener('change', function(){
+  document.getElementById('cbCtrl').textContent = this.value==='proposed' ? 'Proposed Multi-Objective' : 'Traditional Greedy';
+});
+
+// ════════════════════════════════════════════════════════════
+//  INITIALIZATION
+// ════════════════════════════════════════════════════════════
+updateWeights();
+resizeCanvas();
+drawNetwork(null);
+document.getElementById('cbScenario').textContent = SCENARIOS['peak'].name;
+</script>
+</body>
+</html>

@@ -3436,14 +3436,27 @@ resizeCanvas();
 drawNetwork(null);
 document.getElementById('cbScenario').textContent = SCENARIOS['peak'].name;
 
-const initHash = window.location.hash || '';
-const initSearch = window.location.search || '';
-if(initHash === '#compare' || initSearch.includes('tab=compare')){
+const initHash = (typeof window !== 'undefined' && window.location && window.location.hash) ? window.location.hash : '';
+const initSearch = (typeof window !== 'undefined' && window.location && window.location.search) ? window.location.search : '';
+
+const scenMatch = (initHash + initSearch).match(/scen(?:ario)?=([a-z_]+)/i);
+if(scenMatch && SCENARIOS[scenMatch[1]]){
+  const sEl = document.getElementById('scenarioSel');
+  if(sEl){
+    sEl.value = scenMatch[1];
+    const cb = document.getElementById('cbScenario');
+    if(cb) cb.textContent = SCENARIOS[scenMatch[1]].name;
+  }
+  const expSEl = document.getElementById('expScenarioSel');
+  if(expSEl) expSEl.value = scenMatch[1];
+}
+
+if(initHash.includes('#compare') || initSearch.includes('tab=compare')){
   runBoth();
-} else if(initHash === '#analysis' || initSearch.includes('tab=analysis')){
+} else if(initHash.includes('#analysis') || initSearch.includes('tab=analysis')){
   runBoth();
   switchTab('analysis');
-} else if(initHash === '#experiments' || initSearch.includes('tab=experiments')){
+} else if(initHash.includes('#experiments') || initSearch.includes('tab=experiments')){
   switchTab('experiments');
   runBatchExperiment();
 }
